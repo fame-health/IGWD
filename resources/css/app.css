@@ -1,0 +1,93 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-clinic-50: #f0fdfa;
+    --color-clinic-100: #ccfbf1;
+    --color-clinic-200: #99f6e4;
+    --color-clinic-500: #14b8a6;
+    --color-clinic-600: #0d9488;
+    --color-clinic-700: #0f766e;
+    --color-ink-900: #10202a;
+    --color-ink-700: #334155;
+    --color-surface-soft: #f8fafc;
+    --radius-card: 0.75rem;
+}
+
+@layer base {
+    body {
+        @apply bg-slate-50 text-slate-900 antialiased;
+    }
+}
+
+@layer components {
+    .app-shell {
+        @apply min-h-screen bg-slate-50;
+    }
+
+    .page-container {
+        @apply mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8;
+    }
+
+    .panel {
+        @apply rounded-card border border-slate-200 bg-white shadow-sm;
+    }
+
+    .panel-header {
+        @apply border-b border-slate-200 px-5 py-4;
+    }
+
+    .panel-body {
+        @apply px-5 py-4;
+    }
+
+    .metric-card {
+        @apply rounded-card border border-slate-200 bg-white p-4 shadow-sm transition hover:border-clinic-200 hover:shadow-md;
+    }
+
+    .metric-label {
+        @apply text-sm font-medium text-slate-500;
+    }
+
+    .metric-value {
+        @apply mt-2 text-2xl font-semibold text-slate-950;
+    }
+
+    .primary-button {
+        @apply inline-flex items-center justify-center rounded-lg bg-clinic-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-clinic-700 focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:ring-offset-2;
+    }
+
+    .secondary-button {
+        @apply inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:ring-offset-2;
+    }
+
+    .form-input {
+        @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-clinic-500 focus:ring-2 focus:ring-clinic-100;
+    }
+
+    .status-badge {
+        @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
+    }
+
+    .status-safe {
+        @apply bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200;
+    }
+
+    .status-warning {
+        @apply bg-amber-50 text-amber-700 ring-1 ring-amber-200;
+    }
+
+    .status-danger {
+        @apply bg-rose-50 text-rose-700 ring-1 ring-rose-200;
+    }
+
+    .status-info {
+        @apply bg-sky-50 text-sky-700 ring-1 ring-sky-200;
+    }
+}
