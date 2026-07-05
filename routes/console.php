@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('app:check-missing-daily-monitoring')->dailyAt('20:00');
+Schedule::command('app:send-dialysis-schedule-reminders')->everyFiveMinutes();

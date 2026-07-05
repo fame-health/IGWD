@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\DailyMonitoringController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\DialysisScheduleController;
 use App\Http\Controllers\Api\V1\DialysisSessionController;
 use App\Http\Controllers\Api\V1\EducationController;
@@ -23,6 +24,7 @@ Route::prefix('v1')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
         Route::post('change-password', [AuthController::class, 'changePassword']);
+        Route::post('device-token', [DeviceTokenController::class, 'store']);
 
         Route::get('dashboard', DashboardController::class)
             ->middleware('role:admin,perawat,dokter,manajemen,pasien');

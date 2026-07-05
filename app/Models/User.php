@@ -71,6 +71,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(RiskAlert::class, 'assigned_to');
     }
 
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
     public function isRole(string ...$roles): bool
     {
         return in_array($this->role, $roles, true);
