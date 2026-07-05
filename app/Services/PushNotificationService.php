@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\DailyMonitoring;
 use App\Models\DialysisSchedule;
+use App\Models\DialysisSession;
 use App\Models\RiskAlert;
 use App\Models\User;
 use Carbon\Carbon;
@@ -105,6 +107,38 @@ class PushNotificationService
                 'risk_alerts'
             );
         }
+    }
+
+    public function sendDailyMonitoringUpdated(DailyMonitoring $monitoring): void
+    {
+        $this->fcm->sendToUserIds(
+            $this->patientUserIds($monitoring->patient_id),
+            'Data Monitoring Diperbarui',
+            'Data monitoring harian Anda telah diperbarui oleh petugas.',
+            [
+                'type' => 'data_update',
+                'id' => 'monitoring_' . $monitoring->id,
+                'monitoring_id' => $monitoring->id,
+                'patient_id' => $monitoring->patient_id,
+            ],
+            'risk_alerts'
+        );
+    }
+
+    public function sendDialysisSessionUpdated(DialysisSession $session): void
+    {
+        $this->fcm->sendToUserIds(
+            $this->patientUserIds($session->patient_id),
+            'Data Hemodialisis Diperbarui',
+            'Data sesi hemodialisis Anda telah diperbarui.',
+            [
+                'type' => 'data_update',
+                'id' => 'session_' . $session->id,
+                'dialysis_session_id' => $session->id,
+                'patient_id' => $session->patient_id,
+            ],
+            'risk_alerts'
+        );
     }
 
     public function scheduleDateTime(DialysisSchedule $schedule): Carbon

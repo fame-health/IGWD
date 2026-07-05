@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\DialysisSession;
 use App\Services\IdwgCalculationService;
+use App\Services\PushNotificationService;
 use App\Services\RiskAlertService;
 use Illuminate\Support\Facades\Auth;
 
@@ -25,5 +26,9 @@ class DialysisSessionObserver
     public function saved(DialysisSession $dialysisSession): void
     {
         app(RiskAlertService::class)->checkDialysisSession($dialysisSession);
+
+        if (Auth::check() && in_array(Auth::user()->role, ['admin', 'perawat', 'dokter'])) {
+            app(PushNotificationService::class)->sendDialysisSessionUpdated($dialysisSession);
+        }
     }
 }

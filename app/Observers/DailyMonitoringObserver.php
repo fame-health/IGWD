@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\DailyMonitoring;
 use App\Services\DailyMonitoringCalculationService;
+use App\Services\PushNotificationService;
 use App\Services\RiskAlertService;
 use Illuminate\Support\Facades\Auth;
 
@@ -28,5 +29,10 @@ class DailyMonitoringObserver
 
         app(RiskAlertService::class)->checkDailyMonitoring($dailyMonitoring);
         app(RiskAlertService::class)->checkPredictionRisk($dailyMonitoring);
+
+        // Jika diupdate oleh admin/staff (bukan oleh pasien sendiri), kirim notifikasi realtime
+        if (Auth::check() && in_array(Auth::user()->role, ['admin', 'perawat', 'dokter'])) {
+            app(PushNotificationService::class)->sendDailyMonitoringUpdated($dailyMonitoring);
+        }
     }
 }
