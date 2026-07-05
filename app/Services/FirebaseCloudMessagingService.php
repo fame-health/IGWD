@@ -15,7 +15,7 @@ class FirebaseCloudMessagingService
 
     private ?array $credentials = null;
 
-    public function sendToUserIds(iterable $userIds, string $title, string $body, array $data = []): void
+    public function sendToUserIds(iterable $userIds, string $title, string $body, array $data = [], ?string $channelId = null): void
     {
         $ids = collect($userIds)->filter()->unique()->values();
 
@@ -25,12 +25,12 @@ class FirebaseCloudMessagingService
 
         DeviceToken::query()
             ->whereIn('user_id', $ids)
-            ->chunkById(100, function ($deviceTokens) use ($title, $body, $data): void {
-                $this->sendToDeviceTokens($deviceTokens, $title, $body, $data);
+            ->chunkById(100, function ($deviceTokens) use ($title, $body, $data, $channelId): void {
+                $this->sendToDeviceTokens($deviceTokens, $title, $body, $data, $channelId);
             });
     }
 
-    public function sendToDeviceTokens(iterable $deviceTokens, string $title, string $body, array $data = []): void
+    public function sendToDeviceTokens(iterable $deviceTokens, string $title, string $body, array $data = [], ?string $channelId = null): void
     {
         if (! $this->isConfigured()) {
             Log::info('FCM skipped because Firebase credentials are not configured.');
@@ -46,11 +46,11 @@ class FirebaseCloudMessagingService
         }
 
         foreach ($deviceTokens as $deviceToken) {
-            $this->sendToDeviceToken($deviceToken, $accessToken, $projectId, $title, $body, $data);
+            $this->sendToDeviceToken($deviceToken, $accessToken, $projectId, $title, $body, $data, $channelId);
         }
     }
 
-    private function sendToDeviceToken(DeviceToken $deviceToken, string $accessToken, string $projectId, string $title, string $body, array $data): void
+    private function sendToDeviceToken(DeviceToken $deviceToken, string $accessToken, string $projectId, string $title, string $body, array $data, ?string $channelId): void
     {
         try {
             $response = Http::withToken($accessToken)
@@ -67,7 +67,7 @@ class FirebaseCloudMessagingService
                         'android' => [
                             'priority' => 'high',
                             'notification' => [
-                                'channel_id' => config('services.firebase.android_channel_id', 'idwg_notifications'),
+                                'channel_id' => $channelId ?: config('services.firebase.android_channel_id', 'idwg_notifications'),
                                 'sound' => 'default',
                             ],
                         ],

@@ -20,7 +20,8 @@ class PushNotificationService
             $this->patientUserIds($schedule->patient_id),
             'Jadwal HD Baru',
             'Jadwal HD Anda pada '.$this->scheduleLabel($schedule, $scheduledAt).' telah dibuat.',
-            $this->scheduleData($schedule, 'dialysis_schedule_created', $scheduledAt),
+            $this->scheduleData($schedule, 'dialysis_schedule', $scheduledAt),
+            'schedule_reminders'
         );
     }
 
@@ -32,7 +33,8 @@ class PushNotificationService
             $this->patientUserIds($schedule->patient_id),
             'Jadwal HD Diperbarui',
             'Jadwal HD Anda pada '.$this->scheduleLabel($schedule, $scheduledAt).' telah diperbarui.',
-            $this->scheduleData($schedule, 'dialysis_schedule_updated', $scheduledAt),
+            $this->scheduleData($schedule, 'dialysis_schedule', $scheduledAt),
+            'schedule_reminders'
         );
     }
 
@@ -51,9 +53,10 @@ class PushNotificationService
             $title,
             $body,
             [
-                ...$this->scheduleData($schedule, 'dialysis_schedule_reminder', $scheduledAt),
+                ...$this->scheduleData($schedule, 'schedule_reminder', $scheduledAt),
                 'reminder_type' => $reminderType,
             ],
+            'schedule_reminders'
         );
     }
 
@@ -61,12 +64,14 @@ class PushNotificationService
     {
         $riskAlert->loadMissing('patient');
 
+        // Send to patient
         $this->fcm->sendToUserIds(
             $this->patientUserIds($riskAlert->patient_id),
             $riskAlert->title,
             $riskAlert->message,
             [
-                'type' => 'risk_alert_created',
+                'type' => 'risk_alert',
+                'id' => 'alert_' . $riskAlert->id,
                 'risk_alert_id' => $riskAlert->id,
                 'patient_id' => $riskAlert->patient_id,
                 'alert_level' => $riskAlert->alert_level,
@@ -74,7 +79,32 @@ class PushNotificationService
                 'alert_date' => $riskAlert->alert_date?->toDateString(),
                 'alert_time' => $riskAlert->alert_time,
             ],
+            'risk_alerts'
         );
+
+        // Send to staff (doctors and nurses)
+        $staffIds = User::query()
+            ->where('is_active', true)
+            ->whereIn('role', ['perawat', 'dokter'])
+            ->pluck('id');
+
+        if ($staffIds->isNotEmpty()) {
+            $staffTitle = "Alert Risiko: " . ($riskAlert->patient?->name ?? 'Pasien');
+            $this->fcm->sendToUserIds(
+                $staffIds,
+                $staffTitle,
+                $riskAlert->message,
+                [
+                    'type' => 'risk_alert',
+                    'id' => 'alert_' . $riskAlert->id,
+                    'risk_alert_id' => $riskAlert->id,
+                    'patient_id' => $riskAlert->patient_id,
+                    'alert_level' => $riskAlert->alert_level,
+                    'patient_name' => $riskAlert->patient?->name,
+                ],
+                'risk_alerts'
+            );
+        }
     }
 
     public function scheduleDateTime(DialysisSchedule $schedule): Carbon
@@ -103,6 +133,7 @@ class PushNotificationService
     {
         return [
             'type' => $type,
+            'id' => 'schedule_' . $schedule->id,
             'dialysis_schedule_id' => $schedule->id,
             'patient_id' => $schedule->patient_id,
             'hd_date' => $schedule->hd_date?->toDateString(),
