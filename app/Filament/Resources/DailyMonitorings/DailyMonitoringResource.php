@@ -19,7 +19,7 @@ class DailyMonitoringResource extends Resource
 {
     protected static ?string $model = DailyMonitoring::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
     protected static ?string $modelLabel = 'Monitoring Harian';
 

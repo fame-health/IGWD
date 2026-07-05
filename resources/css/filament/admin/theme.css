@@ -1,0 +1,390 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+@layer base {
+    .fi-body {
+        background: linear-gradient(135deg, #f8fafc 0%, #f0fdfa 52%, #fff7ed 100%);
+        color: #0f172a;
+        letter-spacing: 0;
+    }
+
+    .fi-body.dark {
+        background: linear-gradient(135deg, #020617 0%, #0f172a 55%, #111827 100%);
+    }
+}
+
+@layer components {
+    .fi-main {
+        padding-inline: 0.75rem;
+    }
+
+    .fi-page-header-main-ctn {
+        padding-block: 0.75rem 1rem;
+        row-gap: 0.75rem;
+    }
+
+    .fi-header {
+        align-items: flex-start;
+        border: 1px solid rgba(15, 23, 42, 0.07);
+        border-radius: 0.5rem;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        padding: 1rem;
+    }
+
+    .dark .fi-header {
+        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(15, 23, 42, 0.92);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+    }
+
+    .fi-header-heading {
+        color: #0f172a;
+        font-size: 1.35rem;
+        font-weight: 750;
+        letter-spacing: 0;
+        line-height: 1.2;
+    }
+
+    .fi-header-subheading {
+        color: #475569;
+        font-size: 0.875rem;
+        line-height: 1.45;
+        max-width: 48rem;
+    }
+
+    .dark .fi-header-heading {
+        color: #f8fafc;
+    }
+
+    .dark .fi-header-subheading {
+        color: #cbd5e1;
+    }
+
+    .fi-header-actions-ctn {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .fi-header-actions-ctn .fi-ac {
+        width: 100%;
+    }
+
+    .fi-sidebar {
+        border-inline-end: 1px solid rgba(15, 23, 42, 0.08);
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(16px);
+    }
+
+    .dark .fi-sidebar {
+        border-inline-end-color: rgba(255, 255, 255, 0.1);
+        background: rgba(2, 6, 23, 0.88);
+    }
+
+    .fi-topbar {
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        background: rgba(255, 255, 255, 0.84);
+        backdrop-filter: blur(16px);
+    }
+
+    .dark .fi-topbar {
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+        background: rgba(2, 6, 23, 0.84);
+    }
+
+    .fi-sidebar-item-btn {
+        border-radius: 0.5rem;
+        transition:
+            background-color 150ms ease,
+            color 150ms ease,
+            transform 150ms ease;
+    }
+
+    .fi-sidebar-item.fi-active > .fi-sidebar-item-btn,
+    .fi-sidebar-item.fi-sidebar-item-has-active-child-items > .fi-sidebar-item-btn {
+        background: linear-gradient(135deg, rgba(20, 184, 166, 0.14), rgba(14, 165, 233, 0.12));
+        color: #0f766e;
+    }
+
+    .fi-sidebar-item-btn:hover {
+        transform: translateX(2px);
+    }
+
+    .fi-section,
+    .fi-wi-stats-overview-stat,
+    .fi-ta-ctn {
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .dark .fi-section,
+    .dark .fi-wi-stats-overview-stat,
+    .dark .fi-ta-ctn {
+        border-color: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+    }
+
+    .fi-wi-stats-overview-stat {
+        overflow: hidden;
+        padding: 0.9rem;
+    }
+
+    .fi-wi-stats-overview-stat::before {
+        background: linear-gradient(180deg, #14b8a6, #0ea5e9);
+        border-radius: 999px;
+        content: '';
+        height: calc(100% - 1.5rem);
+        inset-block-start: 0.75rem;
+        inset-inline-start: 0;
+        position: absolute;
+        width: 0.25rem;
+    }
+
+    .fi-wi-stats-overview-stat-label {
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 650;
+        letter-spacing: 0;
+    }
+
+    .fi-wi-stats-overview-stat-value {
+        color: #0f172a;
+        font-size: 1.55rem;
+        font-weight: 750;
+        letter-spacing: 0;
+        line-height: 1.15;
+    }
+
+    .dark .fi-wi-stats-overview-stat-label {
+        color: #94a3b8;
+    }
+
+    .dark .fi-wi-stats-overview-stat-value {
+        color: #f8fafc;
+    }
+
+    .fi-section-header-heading,
+    .fi-ta-header-heading {
+        letter-spacing: 0;
+    }
+
+    .fi-wi-chart .fi-section-content {
+        padding: 0.75rem 1rem 1rem;
+    }
+
+    .fi-wi-chart .fi-section-header,
+    .fi-ta-header {
+        padding-block: 0.8rem 0.65rem;
+    }
+
+    .fi-wi-chart .fi-section-header-heading,
+    .fi-ta-header-heading {
+        color: #0f172a;
+        font-size: 1rem;
+        font-weight: 720;
+    }
+
+    .fi-wi-chart .fi-section,
+    .fi-wi-table .fi-ta-ctn {
+        background: rgba(255, 255, 255, 0.97);
+        overflow: hidden;
+    }
+
+    .dark .fi-wi-chart .fi-section-header-heading,
+    .dark .fi-ta-header-heading {
+        color: #f8fafc;
+    }
+
+    .dark .fi-wi-chart .fi-section,
+    .dark .fi-wi-table .fi-ta-ctn {
+        background: rgba(15, 23, 42, 0.94);
+    }
+
+    .fi-wi-chart .fi-section-header,
+    .fi-wi-table .fi-ta-header {
+        border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.9), rgba(255, 255, 255, 0.76));
+    }
+
+    .dark .fi-wi-chart .fi-section-header,
+    .dark .fi-wi-table .fi-ta-header {
+        border-bottom-color: rgba(255, 255, 255, 0.09);
+        background: linear-gradient(180deg, rgba(30, 41, 59, 0.78), rgba(15, 23, 42, 0.5));
+    }
+
+    .fi-wi-chart .fi-section-header-description,
+    .fi-wi-table .fi-ta-header-description {
+        color: #64748b;
+        font-size: 0.8rem;
+        line-height: 1.45;
+    }
+
+    .dark .fi-wi-chart .fi-section-header-description,
+    .dark .fi-wi-table .fi-ta-header-description {
+        color: #94a3b8;
+    }
+
+    .fi-wi-chart .fi-wi-chart-canvas-ctn {
+        border-radius: 0.5rem;
+        border: 1px solid rgba(15, 23, 42, 0.06);
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.82), rgba(255, 255, 255, 0.92));
+        padding: 0.75rem;
+    }
+
+    .dark .fi-wi-chart .fi-wi-chart-canvas-ctn {
+        border-color: rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.82), rgba(2, 6, 23, 0.52));
+    }
+
+    .fi-wi-chart .fi-wi-chart-canvas-ctn:not(.fi-wi-chart-canvas-ctn-no-aspect-ratio) {
+        aspect-ratio: 16 / 9;
+    }
+
+    .fi-ta-content-ctn {
+        border-radius: 0 0 0.5rem 0.5rem;
+    }
+
+    .fi-wi-table .fi-ta-header {
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .fi-wi-table .fi-ta-table {
+        table-layout: auto;
+    }
+
+    .fi-wi-table .fi-ta-cell {
+        vertical-align: middle;
+    }
+
+    .fi-wi-table .fi-ta-text-item {
+        line-height: 1.35;
+    }
+
+    .fi-wi-table .fi-ta-text-description {
+        color: #64748b;
+        font-size: 0.75rem;
+        line-height: 1.35;
+        margin-top: 0.15rem;
+    }
+
+    .dark .fi-wi-table .fi-ta-text-description {
+        color: #94a3b8;
+    }
+
+    .fi-ta-table thead {
+        background: rgba(248, 250, 252, 0.86);
+    }
+
+    .dark .fi-ta-table thead {
+        background: rgba(15, 23, 42, 0.72);
+    }
+
+    .fi-ta-row:hover {
+        background-color: rgba(240, 253, 250, 0.72);
+    }
+
+    .dark .fi-ta-row:hover {
+        background-color: rgba(20, 184, 166, 0.08);
+    }
+
+    .fi-btn {
+        border-radius: 0.5rem;
+        letter-spacing: 0;
+    }
+
+    /* Custom styles for new dashboard widgets */
+    .idwg-stats-widget .fi-section-content-ctn {
+        padding: 1rem;
+    }
+
+    /* Pulse animation for live indicators */
+    @keyframes pulse-soft {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .animate-pulse {
+        animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Smooth transition for all interactive elements */
+    .fi-wi-widget a,
+    .fi-wi-widget button {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Enhanced badge styles */
+    .fi-ta-cell .fi-badge {
+        font-weight: 600;
+        padding: 0.35rem 0.75rem;
+        border-radius: 0.5rem;
+    }
+
+    /* Icon enhancement in tables */
+    .fi-ta-cell svg {
+        transition: transform 0.2s ease;
+    }
+
+    .fi-ta-row:hover .fi-ta-cell svg {
+        transform: scale(1.1);
+    }
+
+    /* Gradient text for headings */
+    .gradient-text {
+        background: linear-gradient(135deg, #14b8a6, #0ea5e9);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Card hover effects */
+    .hover-lift {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.1);
+    }
+
+    .dark .hover-lift:hover {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+}
+
+@media (min-width: 640px) {
+    @layer components {
+        .fi-main {
+            padding-inline: 1rem;
+        }
+
+        .fi-header {
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .fi-header-actions-ctn {
+            width: auto;
+        }
+
+        .fi-header-actions-ctn .fi-ac {
+            width: auto;
+        }
+    }
+}
+
+@media (min-width: 1024px) {
+    @layer components {
+        .fi-main {
+            padding-inline: 1.5rem;
+        }
+    }
+}

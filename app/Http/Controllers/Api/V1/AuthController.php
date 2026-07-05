@@ -4,14 +4,76 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Requests\Api\ChangePasswordRequest;
 use App\Http\Requests\Api\LoginRequest;
+use App\Http\Requests\Api\RegisterPatientRequest;
+use App\Http\Resources\Api\MedicalProfileResource;
+use App\Http\Resources\Api\PatientResource;
 use App\Http\Resources\Api\UserResource;
+use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends BaseApiController
 {
+    public function registerPatient(RegisterPatientRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $result = DB::transaction(function () use ($validated): array {
+            $patientData = collect($validated)->only([
+                'medical_record_number',
+                'name',
+                'nik',
+                'birth_date',
+                'gender',
+                'address',
+                'phone',
+                'responsible_person_name',
+                'responsible_person_phone',
+                'payment_status',
+            ])->all();
+
+            $patientData['medical_record_number'] ??= $this->generateMedicalRecordNumber();
+            $patientData['patient_status'] = 'Aktif';
+
+            $patient = Patient::create($patientData);
+
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => $validated['password'],
+                'role' => 'pasien',
+                'patient_id' => $patient->id,
+                'is_active' => true,
+            ]);
+
+            $medicalProfileData = $validated['medical_profile'] ?? [];
+
+            if (collect($medicalProfileData)->filter(fn ($value) => filled($value))->isNotEmpty()) {
+                $patient->medicalProfile()->create($medicalProfileData);
+            }
+
+            return [
+                'token' => $user->createToken('android-pasien')->plainTextToken,
+                'user' => $user,
+                'patient' => $patient,
+            ];
+        });
+
+        $result['patient']->load('medicalProfile');
+        $medicalProfile = $result['patient']->medicalProfile;
+
+        return $this->success([
+            'token' => $result['token'],
+            'user' => UserResource::make($result['user']),
+            'role' => $result['user']->role,
+            'patient' => PatientResource::make($result['patient']),
+            'medical_profile' => $medicalProfile ? MedicalProfileResource::make($medicalProfile) : null,
+        ], 'Registrasi pasien berhasil.', 201);
+    }
+
     public function login(LoginRequest $request): JsonResponse
     {
         $user = User::query()->where('email', $request->email)->first();
@@ -52,5 +114,18 @@ class AuthController extends BaseApiController
         $user->update(['password' => $request->new_password]);
 
         return $this->success(null, 'Password berhasil diubah.');
+    }
+
+    private function generateMedicalRecordNumber(): string
+    {
+        $prefix = 'RM-'.now()->format('Ymd').'-';
+        $lastNumber = Patient::withTrashed()
+            ->where('medical_record_number', 'like', $prefix.'%')
+            ->orderByDesc('medical_record_number')
+            ->value('medical_record_number');
+
+        $lastSequence = $lastNumber ? (int) substr($lastNumber, strrpos($lastNumber, '-') + 1) : 0;
+
+        return $prefix.str_pad((string) ($lastSequence + 1), 4, '0', STR_PAD_LEFT);
     }
 }

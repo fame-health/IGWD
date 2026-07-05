@@ -19,7 +19,7 @@ class AppSettingResource extends Resource
 {
     protected static ?string $model = AppSetting::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
     protected static ?string $modelLabel = 'App Setting';
 

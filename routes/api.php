@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\VitalSignController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
+    Route::post('register-patient', [AuthController::class, 'registerPatient']);
     Route::post('login', [AuthController::class, 'login']);
 
     Route::middleware('auth:sanctum')->group(function () {

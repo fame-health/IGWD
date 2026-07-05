@@ -9,6 +9,10 @@ class MedicalProfileResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        if ($this->resource === null) {
+            return [];
+        }
+
         return [
             'id' => $this->id,
             'patient_id' => $this->patient_id,

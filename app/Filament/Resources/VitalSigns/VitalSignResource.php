@@ -19,7 +19,7 @@ class VitalSignResource extends Resource
 {
     protected static ?string $model = VitalSign::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHeart;
 
     protected static ?string $modelLabel = 'Tanda Vital';
 

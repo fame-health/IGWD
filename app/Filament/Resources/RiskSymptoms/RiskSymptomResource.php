@@ -19,7 +19,7 @@ class RiskSymptomResource extends Resource
 {
     protected static ?string $model = RiskSymptom::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedExclamationTriangle;
 
     protected static ?string $modelLabel = 'Gejala Risiko';
 

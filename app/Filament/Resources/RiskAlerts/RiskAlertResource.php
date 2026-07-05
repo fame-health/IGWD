@@ -19,7 +19,7 @@ class RiskAlertResource extends Resource
 {
     protected static ?string $model = RiskAlert::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBellAlert;
 
     protected static ?string $modelLabel = 'Notifikasi Risiko Dini';
 

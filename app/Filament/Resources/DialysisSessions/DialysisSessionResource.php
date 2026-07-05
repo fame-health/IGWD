@@ -19,7 +19,7 @@ class DialysisSessionResource extends Resource
 {
     protected static ?string $model = DialysisSession::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentList;
 
     protected static ?string $modelLabel = 'Sesi HD';
 
