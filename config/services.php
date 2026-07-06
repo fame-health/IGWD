@@ -41,4 +41,11 @@ return [
         'android_channel_id' => env('FIREBASE_ANDROID_CHANNEL_ID', 'risk_alerts'),
     ],
 
+    'google' => [
+        'client_ids' => array_values(array_filter(array_map(
+            fn (string $clientId): string => trim($clientId),
+            explode(',', (string) env('GOOGLE_CLIENT_IDS', env('GOOGLE_CLIENT_ID', ''))),
+        ))),
+    ],
+
 ];

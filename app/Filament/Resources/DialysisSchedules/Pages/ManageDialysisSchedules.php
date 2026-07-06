@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\DialysisSchedules\Pages;
 
 use App\Filament\Resources\DialysisSchedules\DialysisScheduleResource;
-use App\Filament\Resources\DialysisSchedules\Widgets\DialysisScheduleStats;
+use App\Filament\Resources\DialysisSchedules\Widgets\DialysisScheduleOperationsBoard;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ManageRecords;
@@ -44,15 +44,12 @@ class ManageDialysisSchedules extends ManageRecords
     protected function getHeaderWidgets(): array
     {
         return [
-            DialysisScheduleStats::class,
+            DialysisScheduleOperationsBoard::class,
         ];
     }
 
     public function getHeaderWidgetsColumns(): int|array
     {
-        return [
-            'md' => 2,
-            'xl' => 4,
-        ];
+        return 1;
     }
 }

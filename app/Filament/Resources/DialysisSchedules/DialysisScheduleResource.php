@@ -3,18 +3,20 @@
 namespace App\Filament\Resources\DialysisSchedules;
 
 use App\Filament\Resources\DialysisSchedules\Pages\ManageDialysisSchedules;
+use App\Filament\Resources\DialysisSchedules\Widgets\DialysisScheduleOperationsBoard;
 use App\Filament\Resources\DialysisSchedules\Widgets\DialysisScheduleStats;
 use App\Filament\Support\ResourceUi;
 use App\Models\DialysisSchedule;
 use App\Models\User;
 use BackedEnum;
 use Carbon\Carbon;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -257,8 +259,23 @@ class DialysisScheduleResource extends Resource
     {
         return $table
             ->modifyQueryUsing(fn (Builder $query): Builder => $query
-                ->with('patient')
-                ->withCount('sessions'))
+                ->select([
+                    'id',
+                    'patient_id',
+                    'hd_date',
+                    'day_name',
+                    'shift',
+                    'room',
+                    'machine_number',
+                    'doctor_name',
+                    'nurse_name',
+                    'attendance_status',
+                    'notes',
+                ])
+                ->with(['patient:id,name,medical_record_number']))
+            ->heading('Daftar Jadwal Hemodialisis')
+            ->description('Data diurutkan berdasarkan jadwal terdekat, lalu shift operasional agar prioritas harian lebih mudah dipantau.')
+            ->extraAttributes(['class' => 'dialysis-schedule-table'], merge: true)
             ->columns([
                 TextColumn::make('hd_date')
                     ->label('Jadwal')
@@ -272,8 +289,9 @@ class DialysisScheduleResource extends Resource
                     ->sortable()
                     ->weight('semibold')
                     ->icon(Heroicon::OutlinedUser)
+                    ->lineClamp(1)
                     ->description(fn (DialysisSchedule $record): string => filled($record->patient?->medical_record_number)
-                        ? 'RM ' . $record->patient->medical_record_number
+                        ? 'RM '.$record->patient->medical_record_number
                         : 'No. RM belum tersedia'),
                 TextColumn::make('shift')
                     ->label('Shift')
@@ -294,14 +312,14 @@ class DialysisScheduleResource extends Resource
                     ->placeholder('-')
                     ->icon(Heroicon::OutlinedMapPin)
                     ->description(fn (DialysisSchedule $record): string => filled($record->machine_number)
-                        ? 'Mesin ' . $record->machine_number
+                        ? 'Mesin '.$record->machine_number
                         : 'Mesin belum diisi'),
                 TextColumn::make('doctor_name')
                     ->label('Tim Medis')
                     ->placeholder('-')
                     ->icon(Heroicon::OutlinedUserCircle)
                     ->description(fn (DialysisSchedule $record): string => filled($record->nurse_name)
-                        ? 'Perawat: ' . $record->nurse_name
+                        ? 'Perawat: '.$record->nurse_name
                         : 'Perawat belum diisi')
                     ->toggleable(),
                 TextColumn::make('attendance_status')
@@ -314,19 +332,20 @@ class DialysisScheduleResource extends Resource
                         'Reschedule' => 'heroicon-o-arrow-path',
                         default => 'heroicon-o-clock',
                     }),
-                TextColumn::make('sessions_count')
-                    ->label('Sesi')
-                    ->badge()
-                    ->color(fn (int $state): string => $state > 0 ? 'success' : 'gray')
-                    ->formatStateUsing(fn (int $state): string => $state > 0 ? "{$state} tercatat" : 'Belum ada')
-                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('notes')
                     ->label('Catatan')
                     ->limit(44)
                     ->placeholder('-')
+                    ->tooltip(fn (DialysisSchedule $record): ?string => filled($record->notes) ? $record->notes : null)
                     ->wrap()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->recordClasses(fn (DialysisSchedule $record): string => match ($record->attendance_status) {
+                'Hadir' => 'dialysis-schedule-row dialysis-schedule-row-success',
+                'Tidak Hadir' => 'dialysis-schedule-row dialysis-schedule-row-danger',
+                'Reschedule' => 'dialysis-schedule-row dialysis-schedule-row-info',
+                default => 'dialysis-schedule-row dialysis-schedule-row-warning',
+            })
             ->filters([
                 Filter::make('tanggal_hd')
                     ->label('Rentang Tanggal')
@@ -355,9 +374,15 @@ class DialysisScheduleResource extends Resource
                     ->options(self::attendanceOptions()),
                 SelectFilter::make('patient_id')
                     ->label('Pasien')
-                    ->relationship('patient', 'name')
+                    ->relationship(
+                        'patient',
+                        'name',
+                        modifyQueryUsing: fn (Builder $query): Builder => $query
+                            ->select(['id', 'name'])
+                            ->orderBy('name')
+                    )
                     ->searchable()
-                    ->preload(),
+                    ->optionsLimit(25),
             ], layout: FiltersLayout::AboveContentCollapsible)
             ->defaultSort(fn (Builder $query): Builder => $query
                 ->orderByRaw('case when hd_date < ? then 1 else 0 end', [today()->toDateString()])
@@ -366,6 +391,7 @@ class DialysisScheduleResource extends Resource
             ->defaultSortOptionLabel('Tanggal terdekat')
             ->searchPlaceholder('Cari pasien, ruangan, mesin, dokter, atau perawat')
             ->striped()
+            ->stackedOnMobile()
             ->persistFiltersInSession()
             ->persistSearchInSession()
             ->paginationPageOptions([10, 25, 50])
@@ -373,14 +399,19 @@ class DialysisScheduleResource extends Resource
             ->emptyStateHeading('Belum ada jadwal HD')
             ->emptyStateDescription('Tambahkan jadwal agar ruang, shift, dan petugas HD bisa dipantau dari satu halaman.')
             ->emptyStateIcon(Heroicon::OutlinedCalendarDays)
-            ->recordActions([
-                EditAction::make()
-                    ->label('Ubah')
-                    ->icon(Heroicon::OutlinedPencilSquare),
-                DeleteAction::make()
-                    ->label('Hapus')
-                    ->icon(Heroicon::OutlinedTrash),
-            ])
+            ->recordActions(
+                ActionGroup::make([
+                    EditAction::make()
+                        ->label('Ubah')
+                        ->icon(Heroicon::OutlinedPencilSquare),
+                    DeleteAction::make()
+                        ->label('Hapus')
+                        ->icon(Heroicon::OutlinedTrash),
+                ])
+                    ->iconButton()
+                    ->tooltip('Aksi')
+                    ->color('gray')
+            )
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),
@@ -391,6 +422,7 @@ class DialysisScheduleResource extends Resource
     public static function getWidgets(): array
     {
         return [
+            DialysisScheduleOperationsBoard::class,
             DialysisScheduleStats::class,
         ];
     }

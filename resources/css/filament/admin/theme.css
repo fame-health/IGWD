@@ -291,6 +291,92 @@
         background-color: rgba(20, 184, 166, 0.08);
     }
 
+    .dialysis-schedule-board {
+        background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 253, 250, 0.82) 48%, rgba(255, 247, 237, 0.78) 100%);
+        box-shadow: 0 16px 36px rgba(15, 23, 42, 0.07);
+    }
+
+    .dark .dialysis-schedule-board {
+        background:
+            linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(19, 78, 74, 0.28) 52%, rgba(30, 41, 59, 0.86) 100%);
+        box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+    }
+
+    .dialysis-schedule-table .fi-ta-header {
+        border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.95), rgba(255, 255, 255, 0.82));
+    }
+
+    .dark .dialysis-schedule-table .fi-ta-header {
+        border-bottom-color: rgba(255, 255, 255, 0.09);
+        background: linear-gradient(180deg, rgba(30, 41, 59, 0.86), rgba(15, 23, 42, 0.62));
+    }
+
+    .dialysis-schedule-table .fi-ta-header-heading {
+        font-size: 1.05rem;
+        font-weight: 760;
+    }
+
+    .dialysis-schedule-table .fi-ta-header-description {
+        color: #64748b;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        max-width: 52rem;
+    }
+
+    .dark .dialysis-schedule-table .fi-ta-header-description {
+        color: #94a3b8;
+    }
+
+    .dialysis-schedule-table .fi-ta-row.dialysis-schedule-row-success {
+        background: linear-gradient(90deg, rgba(16, 185, 129, 0.07), transparent 30%);
+    }
+
+    .dialysis-schedule-table .fi-ta-row.dialysis-schedule-row-warning {
+        background: linear-gradient(90deg, rgba(245, 158, 11, 0.08), transparent 30%);
+    }
+
+    .dialysis-schedule-table .fi-ta-row.dialysis-schedule-row-danger {
+        background: linear-gradient(90deg, rgba(244, 63, 94, 0.08), transparent 30%);
+    }
+
+    .dialysis-schedule-table .fi-ta-row.dialysis-schedule-row-info {
+        background: linear-gradient(90deg, rgba(14, 165, 233, 0.08), transparent 30%);
+    }
+
+    .dialysis-schedule-table .fi-ta-row.dialysis-schedule-row-success .fi-ta-cell:first-child {
+        box-shadow: inset 3px 0 0 #10b981;
+    }
+
+    .dialysis-schedule-table .fi-ta-row.dialysis-schedule-row-warning .fi-ta-cell:first-child {
+        box-shadow: inset 3px 0 0 #f59e0b;
+    }
+
+    .dialysis-schedule-table .fi-ta-row.dialysis-schedule-row-danger .fi-ta-cell:first-child {
+        box-shadow: inset 3px 0 0 #f43f5e;
+    }
+
+    .dialysis-schedule-table .fi-ta-row.dialysis-schedule-row-info .fi-ta-cell:first-child {
+        box-shadow: inset 3px 0 0 #0ea5e9;
+    }
+
+    .dark .dialysis-schedule-table .fi-ta-row.dialysis-schedule-row-success {
+        background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), transparent 30%);
+    }
+
+    .dark .dialysis-schedule-table .fi-ta-row.dialysis-schedule-row-warning {
+        background: linear-gradient(90deg, rgba(245, 158, 11, 0.11), transparent 30%);
+    }
+
+    .dark .dialysis-schedule-table .fi-ta-row.dialysis-schedule-row-danger {
+        background: linear-gradient(90deg, rgba(244, 63, 94, 0.11), transparent 30%);
+    }
+
+    .dark .dialysis-schedule-table .fi-ta-row.dialysis-schedule-row-info {
+        background: linear-gradient(90deg, rgba(14, 165, 233, 0.11), transparent 30%);
+    }
+
     .fi-btn {
         border-radius: 0.5rem;
         letter-spacing: 0;

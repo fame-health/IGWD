@@ -6,6 +6,7 @@ use App\Filament\Resources\Users\Pages\ManageUsers;
 use App\Filament\Support\ResourceUi;
 use App\Models\User;
 use BackedEnum;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -40,16 +41,28 @@ class UserResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('name')
+            ->searchPlaceholder('Cari nama, email, role, atau pasien terkait')
             ->columns([
                 ...ResourceUi::columns('users'),
             ])
             ->filters([
                 ...ResourceUi::filters('users'),
             ])
-            ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-            ])
+            ->defaultPaginationPageOption(10)
+            ->paginationPageOptions([10, 25, 50])
+            ->emptyStateIcon('heroicon-o-users')
+            ->emptyStateHeading('Belum ada user pada kategori ini')
+            ->emptyStateDescription('Gunakan tombol tambah user untuk membuat akun baru sesuai kebutuhan operasional.')
+            ->recordActions(
+                ActionGroup::make([
+                    EditAction::make(),
+                    DeleteAction::make(),
+                ])
+                    ->iconButton()
+                    ->tooltip('Aksi')
+                    ->color('gray')
+            )
             ->toolbarActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     Route::post('register-patient', [AuthController::class, 'registerPatient']);
     Route::post('login', [AuthController::class, 'login']);
+    Route::post('login/google', [AuthController::class, 'loginWithGoogle']);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);

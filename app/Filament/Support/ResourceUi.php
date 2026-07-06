@@ -7,9 +7,13 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Database\Eloquent\Builder;
 
 class ResourceUi
 {
@@ -178,13 +182,46 @@ class ResourceUi
                 TextInput::make('email')->label('Email')->email()->required()->unique(ignoreRecord: true)->maxLength(255),
                 TextInput::make('password')->label('Password')->password()->revealable()->dehydrated(fn ($state) => filled($state))->required(fn (string $operation): bool => $operation === 'create'),
                 Select::make('role')->label('Role')->options(self::options(['admin', 'perawat', 'dokter', 'manajemen', 'pasien']))->required(),
-                Select::make('patient_id')->label('Pasien Terkait')->relationship('patient', 'name')->searchable()->preload(),
+                Select::make('patient_id')
+                    ->label('Pasien Terkait')
+                    ->relationship(
+                        'patient',
+                        'name',
+                        modifyQueryUsing: fn (Builder $query): Builder => $query
+                            ->select(['id', 'name'])
+                            ->orderBy('name')
+                    )
+                    ->searchable()
+                    ->preload()
+                    ->optionsLimit(25),
                 Toggle::make('is_active')->label('Aktif')->default(true),
             ],
             'app_settings' => [
-                TextInput::make('key')->label('Key')->required()->unique(ignoreRecord: true)->maxLength(255),
-                Textarea::make('value')->label('Nilai')->rows(2),
-                Textarea::make('description')->label('Deskripsi')->columnSpanFull(),
+                Section::make('Konfigurasi Aplikasi')
+                    ->description('Kelola parameter global aplikasi di sini untuk mengontrol perilaku sistem.')
+                    ->icon(Heroicon::OutlinedCog6Tooth)
+                    ->schema([
+                        Grid::make(2)
+                            ->schema([
+                                TextInput::make('key')
+                                    ->label('Kunci (Key)')
+                                    ->required()
+                                    ->unique(ignoreRecord: true)
+                                    ->maxLength(255)
+                                    ->placeholder('contoh: minimal_idwg_alert')
+                                    ->helperText('Gunakan format snake_case. Kunci ini digunakan dalam kode program.'),
+                                TextInput::make('value')
+                                    ->label('Nilai (Value)')
+                                    ->required()
+                                    ->placeholder('Masukkan nilai pengaturan'),
+                            ]),
+                        Textarea::make('description')
+                            ->label('Deskripsi')
+                            ->placeholder('Jelaskan secara singkat kegunaan pengaturan ini...')
+                            ->rows(3)
+                            ->columnSpanFull(),
+                    ])
+                    ->collapsible(),
             ],
             default => [],
         };
@@ -265,15 +302,31 @@ class ResourceUi
             ],
             'users' => [
                 TextColumn::make('name')->label('Nama')->searchable()->sortable(),
-                TextColumn::make('email')->label('Email')->searchable(),
-                TextColumn::make('role')->label('Role')->badge(),
-                TextColumn::make('patient.name')->label('Pasien'),
+                TextColumn::make('email')->label('Email')->searchable()->limit(34)->sortable(),
+                TextColumn::make('role')->label('Role')->badge()->searchable()->sortable(),
+                TextColumn::make('patient.name')->label('Pasien')->searchable()->limit(28)->placeholder('-'),
                 IconColumn::make('is_active')->label('Aktif')->boolean(),
             ],
             'app_settings' => [
-                TextColumn::make('key')->label('Key')->searchable()->sortable(),
-                TextColumn::make('value')->label('Nilai')->limit(60),
-                TextColumn::make('description')->label('Deskripsi')->limit(80),
+                TextColumn::make('key')
+                    ->label('Kunci')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold')
+                    ->fontFamily('mono')
+                    ->copyable()
+                    ->copyMessage('Kunci disalin ke clipboard'),
+                TextColumn::make('value')
+                    ->label('Nilai')
+                    ->limit(50)
+                    ->searchable()
+                    ->wrap()
+                    ->tooltip(fn ($record): string => $record->value),
+                TextColumn::make('description')
+                    ->label('Deskripsi')
+                    ->limit(80)
+                    ->color('gray')
+                    ->wrap(),
             ],
             default => [],
         };
@@ -305,9 +358,7 @@ class ResourceUi
                 SelectFilter::make('alert_type')->label('Jenis')->options(self::options(['Kenaikan Berat Badan', 'IDWG Tinggi', 'Cairan Melebihi Batas', 'Gejala Risiko', 'Prediksi Risiko', 'Tidak Input Data Harian'])),
                 SelectFilter::make('status')->label('Status')->options(self::options(['Baru', 'Dibaca', 'Ditindaklanjuti', 'Selesai'])),
             ],
-            'users' => [
-                SelectFilter::make('role')->label('Role')->options(self::options(['admin', 'perawat', 'dokter', 'manajemen', 'pasien'])),
-            ],
+            'users' => [],
             default => [],
         };
     }

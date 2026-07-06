@@ -19,13 +19,13 @@ class AppSettingResource extends Resource
 {
     protected static ?string $model = AppSetting::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAdjustmentsHorizontal;
 
-    protected static ?string $modelLabel = 'App Setting';
+    protected static ?string $modelLabel = 'Pengaturan Aplikasi';
 
-    protected static ?string $pluralModelLabel = 'App Settings';
+    protected static ?string $pluralModelLabel = 'Pengaturan Aplikasi';
 
-    protected static string|\UnitEnum|null $navigationGroup = 'Pengaturan';
+    protected static string|\UnitEnum|null $navigationGroup = 'Sistem';
 
     protected static ?string $navigationLabel = 'App Settings';
 

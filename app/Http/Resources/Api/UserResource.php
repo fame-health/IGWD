@@ -16,6 +16,7 @@ class UserResource extends JsonResource
             'role' => $this->role,
             'patient_id' => $this->patient_id,
             'is_active' => (bool) $this->is_active,
+            'avatar_url' => $this->avatar_url,
         ];
     }
 }

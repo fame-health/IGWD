@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Requests\Api\ChangePasswordRequest;
+use App\Http\Requests\Api\GoogleLoginRequest;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterPatientRequest;
 use App\Http\Resources\Api\MedicalProfileResource;
@@ -10,10 +11,12 @@ use App\Http\Resources\Api\PatientResource;
 use App\Http\Resources\Api\UserResource;
 use App\Models\Patient;
 use App\Models\User;
+use App\Services\GoogleTokenVerifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AuthController extends BaseApiController
 {
@@ -89,6 +92,62 @@ class AuthController extends BaseApiController
             'user' => UserResource::make($user),
             'role' => $user->role,
         ], 'Login berhasil.');
+    }
+
+    public function loginWithGoogle(GoogleLoginRequest $request, GoogleTokenVerifier $googleTokenVerifier): JsonResponse
+    {
+        $googleUser = $googleTokenVerifier->verify($request->validated('id_token'));
+
+        if (! $googleUser) {
+            return $this->error('Token Google tidak valid.', [
+                'id_token' => ['Token Google tidak valid atau sudah kedaluwarsa.'],
+            ], 401);
+        }
+
+        $user = DB::transaction(function () use ($googleUser): User {
+            $user = User::query()
+                ->where('google_id', $googleUser['google_id'])
+                ->orWhere('email', $googleUser['email'])
+                ->lockForUpdate()
+                ->first();
+
+            if ($user) {
+                if (! $user->is_active) {
+                    return $user;
+                }
+
+                $user->forceFill([
+                    'google_id' => $user->google_id ?: $googleUser['google_id'],
+                    'avatar_url' => $googleUser['avatar_url'],
+                    'email_verified_at' => $user->email_verified_at ?: now(),
+                ])->save();
+
+                return $user->fresh();
+            }
+
+            return User::create([
+                'name' => $googleUser['name'] ?: Str::before($googleUser['email'], '@'),
+                'email' => $googleUser['email'],
+                'email_verified_at' => now(),
+                'password' => Str::random(40),
+                'role' => 'pasien',
+                'is_active' => true,
+                'google_id' => $googleUser['google_id'],
+                'avatar_url' => $googleUser['avatar_url'],
+            ]);
+        });
+
+        if (! $user->is_active) {
+            return $this->error('Akun tidak aktif.', [], 401);
+        }
+
+        $token = $user->createToken('android-'.$user->role)->plainTextToken;
+
+        return $this->success([
+            'token' => $token,
+            'user' => UserResource::make($user),
+            'role' => $user->role,
+        ], 'Login Google berhasil.');
     }
 
     public function logout(Request $request): JsonResponse
