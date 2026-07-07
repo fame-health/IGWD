@@ -18,16 +18,18 @@ class PatientController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $patients = Patient::query()
+        $query = Patient::query()
             ->when($request->filled('search'), function ($query) use ($request) {
                 $query->where(function ($query) use ($request) {
                     $query->where('name', 'like', '%'.$request->search.'%')
                         ->orWhere('medical_record_number', 'like', '%'.$request->search.'%');
                 });
             })
-            ->when($request->filled('patient_status'), fn ($query) => $query->where('patient_status', $request->patient_status))
-            ->orderBy('name')
-            ->paginate($request->integer('per_page', 15));
+            ->when($request->filled('patient_status'), fn ($query) => $query->where('patient_status', $request->patient_status));
+
+        $this->scopePatientList($query, $request);
+
+        $patients = $query->orderBy('name')->paginate($request->integer('per_page', 15));
 
         return $this->success(PatientResource::collection($patients));
     }
@@ -50,6 +52,10 @@ class PatientController extends BaseApiController
 
     public function update(PatientRequest $request, Patient $patient): JsonResponse
     {
+        if (! $this->patientAllowed($request, $patient->id)) {
+            return $this->deny();
+        }
+
         $patient->update($request->validated());
 
         return $this->success(PatientResource::make($patient), 'Pasien berhasil diperbarui.');

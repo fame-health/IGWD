@@ -32,6 +32,10 @@ class EducationController extends BaseApiController
 
     public function store(EducationRequest $request): JsonResponse
     {
+        if (! $this->patientAllowed($request, (int) $request->patient_id)) {
+            return $this->deny();
+        }
+
         $education = Education::create($request->validated());
 
         return $this->success(EducationResource::make($education), 'Edukasi berhasil dibuat.', 201);
@@ -39,6 +43,13 @@ class EducationController extends BaseApiController
 
     public function update(EducationRequest $request, Education $education): JsonResponse
     {
+        if (
+            ! $this->patientAllowed($request, $education->patient_id) ||
+            ! $this->patientAllowed($request, (int) $request->patient_id)
+        ) {
+            return $this->deny();
+        }
+
         $education->update($request->validated());
 
         return $this->success(EducationResource::make($education), 'Edukasi berhasil diperbarui.');

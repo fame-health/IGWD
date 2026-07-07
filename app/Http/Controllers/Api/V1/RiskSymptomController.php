@@ -44,7 +44,10 @@ class RiskSymptomController extends BaseApiController
 
     public function update(RiskSymptomRequest $request, RiskSymptom $riskSymptom): JsonResponse
     {
-        if (! $this->patientAllowed($request, $riskSymptom->patient_id)) {
+        if (
+            ! $this->patientAllowed($request, $riskSymptom->patient_id) ||
+            ! $this->patientAllowed($request, (int) $request->patient_id)
+        ) {
             return $this->deny();
         }
 

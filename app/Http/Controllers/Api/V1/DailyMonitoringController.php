@@ -45,7 +45,10 @@ class DailyMonitoringController extends BaseApiController
 
     public function update(DailyMonitoringRequest $request, DailyMonitoring $dailyMonitoring): JsonResponse
     {
-        if (! $this->patientAllowed($request, $dailyMonitoring->patient_id)) {
+        if (
+            ! $this->patientAllowed($request, $dailyMonitoring->patient_id) ||
+            ! $this->patientAllowed($request, (int) $request->patient_id)
+        ) {
             return $this->deny();
         }
 

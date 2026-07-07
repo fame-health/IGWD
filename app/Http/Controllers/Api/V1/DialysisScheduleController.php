@@ -34,20 +34,43 @@ class DialysisScheduleController extends BaseApiController
 
     public function store(DialysisScheduleRequest $request): JsonResponse
     {
-        $schedule = DialysisSchedule::create($request->validated());
+        $data = $request->validated();
+
+        if ($request->user()->role === 'perawat') {
+            $data['nurse_name'] = $request->user()->name;
+        }
+
+        $schedule = DialysisSchedule::create($data);
 
         return $this->success(DialysisScheduleResource::make($schedule), 'Jadwal HD berhasil dibuat.', 201);
     }
 
     public function update(DialysisScheduleRequest $request, DialysisSchedule $dialysisSchedule): JsonResponse
     {
-        $dialysisSchedule->update($request->validated());
+        if (
+            ! $this->patientAllowed($request, $dialysisSchedule->patient_id) ||
+            ! $this->patientAllowed($request, (int) $request->patient_id)
+        ) {
+            return $this->deny();
+        }
+
+        $data = $request->validated();
+
+        if ($request->user()->role === 'perawat') {
+            $data['nurse_name'] = $request->user()->name;
+        }
+
+        $dialysisSchedule->update($data);
 
         return $this->success(DialysisScheduleResource::make($dialysisSchedule), 'Jadwal HD berhasil diperbarui.');
     }
 
     public function attendance(Request $request, DialysisSchedule $dialysisSchedule): JsonResponse
     {
+        if (! $this->patientAllowed($request, $dialysisSchedule->patient_id)) {
+            return $this->deny();
+        }
+
         $data = $request->validate(['attendance_status' => ['required', 'in:Terjadwal,Hadir,Tidak Hadir,Reschedule']]);
         $dialysisSchedule->update($data);
 

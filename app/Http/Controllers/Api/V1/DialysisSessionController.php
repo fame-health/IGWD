@@ -35,6 +35,10 @@ class DialysisSessionController extends BaseApiController
 
     public function store(DialysisSessionRequest $request): JsonResponse
     {
+        if (! $this->patientAllowed($request, (int) $request->patient_id)) {
+            return $this->deny();
+        }
+
         $session = DialysisSession::create($request->validated());
 
         return $this->success(DialysisSessionResource::make($session), 'Sesi HD berhasil dibuat.', 201);
@@ -42,6 +46,13 @@ class DialysisSessionController extends BaseApiController
 
     public function update(DialysisSessionRequest $request, DialysisSession $dialysisSession): JsonResponse
     {
+        if (
+            ! $this->patientAllowed($request, $dialysisSession->patient_id) ||
+            ! $this->patientAllowed($request, (int) $request->patient_id)
+        ) {
+            return $this->deny();
+        }
+
         $dialysisSession->update($request->validated());
 
         return $this->success(DialysisSessionResource::make($dialysisSession), 'Sesi HD berhasil diperbarui.');
@@ -49,6 +60,10 @@ class DialysisSessionController extends BaseApiController
 
     public function doctorNote(DoctorNoteRequest $request, DialysisSession $dialysisSession): JsonResponse
     {
+        if (! $this->patientAllowed($request, $dialysisSession->patient_id)) {
+            return $this->deny();
+        }
+
         $dialysisSession->update($request->validated());
 
         return $this->success(DialysisSessionResource::make($dialysisSession), 'Catatan dokter berhasil disimpan.');

@@ -22,6 +22,7 @@ class ReportController extends BaseApiController
             ->when($request->filled('fluid_status'), fn ($query) => $query->where('fluid_status', $request->fluid_status))
             ->when($request->filled('risk_status'), fn ($query) => $query->where('risk_status', $request->risk_status));
 
+        $this->scopeForPatientRole($query, $request);
         $this->applyDateFilters($query, $request, 'monitoring_date');
         $data = $query->orderByDesc('monitoring_date')->get();
 
@@ -43,6 +44,7 @@ class ReportController extends BaseApiController
             ->when($request->filled('shift'), fn ($query) => $query->where('shift', $request->shift))
             ->when($request->filled('risk_category'), fn ($query) => $query->where('risk_category', $request->risk_category));
 
+        $this->scopeForPatientRole($query, $request);
         $this->applyDateFilters($query, $request, 'session_date');
         $data = $query->orderByDesc('session_date')->get();
 
@@ -64,9 +66,12 @@ class ReportController extends BaseApiController
             ->whereIn('alert_level', $request->filled('alert_level') ? [$request->alert_level] : ['Tinggi', 'Darurat'])
             ->whereNotNull('patient_id');
 
+        $this->scopeForPatientRole($query, $request);
         $this->applyDateFilters($query, $request, 'alert_date');
         $alerts = $query->latest()->get();
-        $patients = Patient::whereIn('id', $alerts->pluck('patient_id')->unique())->get();
+        $patientQuery = Patient::whereIn('id', $alerts->pluck('patient_id')->unique());
+        $this->scopePatientList($patientQuery, $request);
+        $patients = $patientQuery->get();
 
         return $this->success([
             'data' => $patients->map(fn (Patient $patient) => [
@@ -90,6 +95,7 @@ class ReportController extends BaseApiController
             ->when($request->filled('alert_type'), fn ($query) => $query->where('alert_type', $request->alert_type))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status));
 
+        $this->scopeForPatientRole($query, $request);
         $this->applyDateFilters($query, $request, 'alert_date');
         $data = $query->latest()->get();
 

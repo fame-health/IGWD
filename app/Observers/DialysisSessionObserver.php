@@ -25,6 +25,12 @@ class DialysisSessionObserver
 
     public function saved(DialysisSession $dialysisSession): void
     {
+        if ($dialysisSession->dialysis_schedule_id) {
+            $dialysisSession->schedule()
+                ->where('attendance_status', 'Terjadwal')
+                ->update(['attendance_status' => 'Hadir']);
+        }
+
         app(RiskAlertService::class)->checkDialysisSession($dialysisSession);
 
         if (Auth::check() && in_array(Auth::user()->role, ['admin', 'perawat', 'dokter'])) {

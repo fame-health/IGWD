@@ -33,6 +33,10 @@ class VitalSignController extends BaseApiController
 
     public function store(VitalSignRequest $request): JsonResponse
     {
+        if (! $this->patientAllowed($request, (int) $request->patient_id)) {
+            return $this->deny();
+        }
+
         $vitalSign = VitalSign::create($request->validated());
 
         return $this->success(VitalSignResource::make($vitalSign), 'Tanda vital berhasil dibuat.', 201);
@@ -40,6 +44,13 @@ class VitalSignController extends BaseApiController
 
     public function update(VitalSignRequest $request, VitalSign $vitalSign): JsonResponse
     {
+        if (
+            ! $this->patientAllowed($request, $vitalSign->patient_id) ||
+            ! $this->patientAllowed($request, (int) $request->patient_id)
+        ) {
+            return $this->deny();
+        }
+
         $vitalSign->update($request->validated());
 
         return $this->success(VitalSignResource::make($vitalSign), 'Tanda vital berhasil diperbarui.');

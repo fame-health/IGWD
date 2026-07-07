@@ -33,8 +33,12 @@ class RiskAlertController extends BaseApiController
         return $this->success(RiskAlertResource::make($riskAlert->load('patient')));
     }
 
-    public function markAsRead(RiskAlert $riskAlert): JsonResponse
+    public function markAsRead(Request $request, RiskAlert $riskAlert): JsonResponse
     {
+        if (! $this->patientAllowed($request, $riskAlert->patient_id)) {
+            return $this->deny();
+        }
+
         $riskAlert->update([
             'status' => 'Dibaca',
             'read_at' => now(),
@@ -45,6 +49,10 @@ class RiskAlertController extends BaseApiController
 
     public function followUp(RiskAlertFollowUpRequest $request, RiskAlert $riskAlert): JsonResponse
     {
+        if (! $this->patientAllowed($request, $riskAlert->patient_id)) {
+            return $this->deny();
+        }
+
         $riskAlert->update([
             'status' => 'Ditindaklanjuti',
             'followed_up_at' => now(),
@@ -57,6 +65,10 @@ class RiskAlertController extends BaseApiController
 
     public function resolve(RiskAlertFollowUpRequest $request, RiskAlert $riskAlert): JsonResponse
     {
+        if (! $this->patientAllowed($request, $riskAlert->patient_id)) {
+            return $this->deny();
+        }
+
         $riskAlert->update([
             'status' => 'Selesai',
             'resolved_at' => now(),

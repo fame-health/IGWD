@@ -29,21 +29,27 @@ class DashboardController extends BaseApiController
         $role = $user->role;
         $today = now()->toDateString();
 
+        $patientQuery = fn () => $this->scopePatientList(Patient::query(), $request);
+        $scheduleQuery = fn () => $this->scopeForPatientRole(DialysisSchedule::query(), $request);
+        $sessionQuery = fn () => $this->scopeForPatientRole(DialysisSession::query(), $request);
+        $monitoringQuery = fn () => $this->scopeForPatientRole(DailyMonitoring::query(), $request);
+        $alertQuery = fn () => $this->scopeForPatientRole(RiskAlert::query(), $request);
+
         $data = match ($role) {
             'perawat', 'admin' => [
-                'total_pasien_aktif' => Patient::where('patient_status', 'Aktif')->count(),
-                'jadwal_hd_hari_ini' => DialysisSchedule::whereDate('hd_date', $today)->count(),
-                'monitoring_harian_hari_ini' => DailyMonitoring::whereDate('monitoring_date', $today)->count(),
-                'alert_baru' => RiskAlert::where('status', 'Baru')->count(),
-                'alert_tinggi_darurat' => RiskAlert::whereIn('alert_level', ['Tinggi', 'Darurat'])->count(),
-                'pasien_perlu_dipantau' => DailyMonitoring::whereIn('risk_status', ['Waspada', 'Tinggi', 'Darurat'])->distinct('patient_id')->count('patient_id'),
+                'total_pasien_aktif' => $patientQuery()->where('patient_status', 'Aktif')->count(),
+                'jadwal_hd_hari_ini' => $scheduleQuery()->whereDate('hd_date', $today)->count(),
+                'monitoring_harian_hari_ini' => $monitoringQuery()->whereDate('monitoring_date', $today)->count(),
+                'alert_baru' => $alertQuery()->where('status', 'Baru')->count(),
+                'alert_tinggi_darurat' => $alertQuery()->whereIn('alert_level', ['Tinggi', 'Darurat'])->count(),
+                'pasien_perlu_dipantau' => $monitoringQuery()->whereIn('risk_status', ['Waspada', 'Tinggi', 'Darurat'])->distinct('patient_id')->count('patient_id'),
             ],
             'dokter' => [
-                'total_pasien_aktif' => Patient::where('patient_status', 'Aktif')->count(),
-                'alert_tinggi_darurat' => RiskAlert::whereIn('alert_level', ['Tinggi', 'Darurat'])->count(),
-                'pasien_risiko_tinggi' => RiskAlert::whereIn('alert_level', ['Tinggi', 'Darurat'])->distinct('patient_id')->count('patient_id'),
-                'sesi_hd_hari_ini' => DialysisSession::whereDate('session_date', $today)->count(),
-                'notifikasi_belum_ditindaklanjuti' => RiskAlert::whereIn('status', ['Baru', 'Dibaca'])->count(),
+                'total_pasien_aktif' => $patientQuery()->where('patient_status', 'Aktif')->count(),
+                'alert_tinggi_darurat' => $alertQuery()->whereIn('alert_level', ['Tinggi', 'Darurat'])->count(),
+                'pasien_risiko_tinggi' => $alertQuery()->whereIn('alert_level', ['Tinggi', 'Darurat'])->distinct('patient_id')->count('patient_id'),
+                'sesi_hd_hari_ini' => $sessionQuery()->whereDate('session_date', $today)->count(),
+                'notifikasi_belum_ditindaklanjuti' => $alertQuery()->whereIn('status', ['Baru', 'Dibaca'])->count(),
             ],
             'pasien' => [
                 'jadwal_hd_berikutnya' => DialysisScheduleResource::make(DialysisSchedule::where('patient_id', $user->patient_id)->whereDate('hd_date', '>=', $today)->orderBy('hd_date')->first()),
@@ -52,9 +58,9 @@ class DashboardController extends BaseApiController
                 'status_risiko_terakhir' => DailyMonitoring::where('patient_id', $user->patient_id)->latest('monitoring_date')->value('risk_status'),
             ],
             default => [
-                'total_pasien_aktif' => Patient::where('patient_status', 'Aktif')->count(),
-                'total_alert' => RiskAlert::count(),
-                'alert_tinggi_darurat' => RiskAlert::whereIn('alert_level', ['Tinggi', 'Darurat'])->count(),
+                'total_pasien_aktif' => $patientQuery()->where('patient_status', 'Aktif')->count(),
+                'total_alert' => $alertQuery()->count(),
+                'alert_tinggi_darurat' => $alertQuery()->whereIn('alert_level', ['Tinggi', 'Darurat'])->count(),
             ],
         };
 
