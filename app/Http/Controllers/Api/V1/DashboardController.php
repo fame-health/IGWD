@@ -18,7 +18,15 @@ class DashboardController extends BaseApiController
 {
     public function __invoke(Request $request): JsonResponse
     {
-        $role = $request->user()->role;
+        $user = $request->user();
+
+        if ($user->requiresPatientProfile()) {
+            return $this->error('Lengkapi biodata pasien terlebih dahulu.', [
+                'patient_profile' => ['Biodata pasien wajib diisi sebelum masuk dashboard.'],
+            ], 409);
+        }
+
+        $role = $user->role;
         $today = now()->toDateString();
 
         $data = match ($role) {
@@ -38,10 +46,10 @@ class DashboardController extends BaseApiController
                 'notifikasi_belum_ditindaklanjuti' => RiskAlert::whereIn('status', ['Baru', 'Dibaca'])->count(),
             ],
             'pasien' => [
-                'jadwal_hd_berikutnya' => DialysisScheduleResource::make(DialysisSchedule::where('patient_id', $request->user()->patient_id)->whereDate('hd_date', '>=', $today)->orderBy('hd_date')->first()),
-                'monitoring_harian_terakhir' => DailyMonitoringResource::make(DailyMonitoring::where('patient_id', $request->user()->patient_id)->latest('monitoring_date')->first()),
-                'edukasi_terbaru' => EducationResource::make(Education::where('patient_id', $request->user()->patient_id)->latest('education_date')->first()),
-                'status_risiko_terakhir' => DailyMonitoring::where('patient_id', $request->user()->patient_id)->latest('monitoring_date')->value('risk_status'),
+                'jadwal_hd_berikutnya' => DialysisScheduleResource::make(DialysisSchedule::where('patient_id', $user->patient_id)->whereDate('hd_date', '>=', $today)->orderBy('hd_date')->first()),
+                'monitoring_harian_terakhir' => DailyMonitoringResource::make(DailyMonitoring::where('patient_id', $user->patient_id)->latest('monitoring_date')->first()),
+                'edukasi_terbaru' => EducationResource::make(Education::where('patient_id', $user->patient_id)->latest('education_date')->first()),
+                'status_risiko_terakhir' => DailyMonitoring::where('patient_id', $user->patient_id)->latest('monitoring_date')->value('risk_status'),
             ],
             default => [
                 'total_pasien_aktif' => Patient::where('patient_status', 'Aktif')->count(),

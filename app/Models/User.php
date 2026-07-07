@@ -83,4 +83,9 @@ class User extends Authenticatable implements FilamentUser
     {
         return in_array($this->role, $roles, true);
     }
+
+    public function requiresPatientProfile(): bool
+    {
+        return $this->role === 'pasien' && blank($this->patient_id);
+    }
 }

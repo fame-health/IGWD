@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Requests\Api\ChangePasswordRequest;
+use App\Http\Requests\Api\CompletePatientProfileRequest;
 use App\Http\Requests\Api\GoogleLoginRequest;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterPatientRequest;
@@ -160,6 +161,74 @@ class AuthController extends BaseApiController
     public function me(Request $request): JsonResponse
     {
         return $this->success(UserResource::make($request->user()));
+    }
+
+    public function completePatientProfile(CompletePatientProfileRequest $request): JsonResponse
+    {
+        if (! $request->user()->isRole('pasien')) {
+            return $this->deny();
+        }
+
+        $validated = $request->validated();
+
+        $result = DB::transaction(function () use ($request, $validated): array {
+            $user = User::query()
+                ->whereKey($request->user()->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $patientData = collect($validated)->only([
+                'medical_record_number',
+                'name',
+                'nik',
+                'birth_date',
+                'gender',
+                'address',
+                'phone',
+                'responsible_person_name',
+                'responsible_person_phone',
+                'payment_status',
+            ])->all();
+
+            if (blank($patientData['medical_record_number'] ?? null)) {
+                unset($patientData['medical_record_number']);
+            }
+
+            if ($user->patient_id) {
+                $patient = Patient::query()->whereKey($user->patient_id)->lockForUpdate()->firstOrFail();
+                $patient->update($patientData);
+            } else {
+                $patientData['medical_record_number'] ??= $this->generateMedicalRecordNumber();
+                $patientData['patient_status'] = 'Aktif';
+                $patient = Patient::create($patientData);
+            }
+
+            $user->forceFill([
+                'name' => $patientData['name'],
+                'patient_id' => $patient->id,
+            ])->save();
+
+            $medicalProfileData = $validated['medical_profile'] ?? [];
+
+            if (collect($medicalProfileData)->filter(fn ($value) => filled($value))->isNotEmpty()) {
+                $patient->medicalProfile()->updateOrCreate([], $medicalProfileData);
+            }
+
+            return [
+                'user' => $user->fresh(),
+                'patient' => $patient->fresh(),
+            ];
+        });
+
+        $result['patient']->load('medicalProfile');
+        $medicalProfile = $result['patient']->medicalProfile;
+
+        return $this->success([
+            'user' => UserResource::make($result['user']),
+            'role' => $result['user']->role,
+            'patient' => PatientResource::make($result['patient']),
+            'medical_profile' => $medicalProfile ? MedicalProfileResource::make($medicalProfile) : null,
+        ], 'Biodata pasien berhasil disimpan.');
     }
 
     public function changePassword(ChangePasswordRequest $request): JsonResponse

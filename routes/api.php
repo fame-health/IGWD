@@ -24,6 +24,9 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
+        Route::post('me/patient-profile', [AuthController::class, 'completePatientProfile']);
+        // Compatibility for older APKs that posted the misspelled path.
+        Route::post('me/patien-profile', [AuthController::class, 'completePatientProfile']);
         Route::post('change-password', [AuthController::class, 'changePassword']);
         Route::post('device-token', [DeviceTokenController::class, 'store']);
 
