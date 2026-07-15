@@ -12,11 +12,12 @@ class VitalSignController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $query = VitalSign::query()->with('patient')
+        $query = VitalSign::query()->with(['patient', 'createdBy'])
             ->when($request->filled('patient_id'), fn ($query) => $query->where('patient_id', $request->patient_id))
             ->when($request->filled('dialysis_session_id'), fn ($query) => $query->where('dialysis_session_id', $request->dialysis_session_id));
 
         $this->scopeForPatientRole($query, $request);
+        $this->scopeForCreator($query, $request);
         $this->applyDateFilters($query, $request, 'measurement_date');
 
         return $this->success(VitalSignResource::collection($query->orderByDesc('measurement_date')->paginate($request->integer('per_page', 15))));
@@ -37,9 +38,12 @@ class VitalSignController extends BaseApiController
             return $this->deny();
         }
 
-        $vitalSign = VitalSign::create($request->validated());
+        $data = $request->validated();
+        $data['created_by'] ??= $request->user()?->id;
 
-        return $this->success(VitalSignResource::make($vitalSign), 'Tanda vital berhasil dibuat.', 201);
+        $vitalSign = VitalSign::create($data);
+
+        return $this->success(VitalSignResource::make($vitalSign->load(['patient', 'createdBy'])), 'Tanda vital berhasil dibuat.', 201);
     }
 
     public function update(VitalSignRequest $request, VitalSign $vitalSign): JsonResponse

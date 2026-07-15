@@ -12,10 +12,11 @@ class EducationController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Education::query()->with('patient')
+        $query = Education::query()->with(['patient', 'createdBy'])
             ->when($request->filled('patient_id'), fn ($query) => $query->where('patient_id', $request->patient_id));
 
         $this->scopeForPatientRole($query, $request);
+        $this->scopeForCreator($query, $request);
         $this->applyDateFilters($query, $request, 'education_date');
 
         return $this->success(EducationResource::collection($query->orderByDesc('education_date')->paginate($request->integer('per_page', 15))));
@@ -36,9 +37,12 @@ class EducationController extends BaseApiController
             return $this->deny();
         }
 
-        $education = Education::create($request->validated());
+        $data = $request->validated();
+        $data['created_by'] ??= $request->user()?->id;
 
-        return $this->success(EducationResource::make($education), 'Edukasi berhasil dibuat.', 201);
+        $education = Education::create($data);
+
+        return $this->success(EducationResource::make($education->load(['patient', 'createdBy'])), 'Edukasi berhasil dibuat.', 201);
     }
 
     public function update(EducationRequest $request, Education $education): JsonResponse

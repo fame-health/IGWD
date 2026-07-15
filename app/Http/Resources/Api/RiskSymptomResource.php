@@ -25,6 +25,8 @@ class RiskSymptomResource extends JsonResource
             'headache' => (bool) $this->headache,
             'description' => $this->description,
             'system_risk_status' => $this->system_risk_status,
+            'created_by' => $this->created_by,
+            'created_by_name' => $this->createdBy?->name,
         ];
     }
 }

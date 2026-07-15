@@ -80,12 +80,28 @@ class PatientController extends BaseApiController
         $lastMonitoring = $patient->dailyMonitorings()->latest('monitoring_date')->first();
         $latestAlerts = $patient->riskAlerts()->latest()->limit(5)->get();
 
+        $medicalProfileResource = $patient->medicalProfile
+            ? MedicalProfileResource::make($patient->medicalProfile)
+            : null;
+        $nextScheduleResource = $nextSchedule
+            ? DialysisScheduleResource::make($nextSchedule)
+            : null;
+        $lastSessionResource = $lastSession
+            ? DialysisSessionResource::make($lastSession)
+            : null;
+        $lastMonitoringResource = $lastMonitoring
+            ? DailyMonitoringResource::make($lastMonitoring)
+            : null;
+
         return $this->success([
             'patient' => PatientResource::make($patient),
-            'medical_profile' => MedicalProfileResource::make($patient->medicalProfile),
-            'next_schedule' => DialysisScheduleResource::make($nextSchedule),
-            'last_dialysis_session' => DialysisSessionResource::make($lastSession),
-            'last_daily_monitoring' => DailyMonitoringResource::make($lastMonitoring),
+            'medical_profile' => $medicalProfileResource,
+            'medical_data' => $medicalProfileResource,
+            'next_schedule' => $nextScheduleResource,
+            'last_dialysis_session' => $lastSessionResource,
+            'last_session' => $lastSessionResource,
+            'last_daily_monitoring' => $lastMonitoringResource,
+            'last_monitoring' => $lastMonitoringResource,
             'last_idwg' => [
                 'idwg_kg' => $lastSession?->idwg_kg,
                 'idwg_percent' => $lastSession?->idwg_percent,

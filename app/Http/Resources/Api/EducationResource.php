@@ -20,6 +20,8 @@ class EducationResource extends JsonResource
             'schedule_compliance' => $this->schedule_compliance,
             'follow_up_notes' => $this->follow_up_notes,
             'educator_name' => $this->educator_name,
+            'created_by' => $this->created_by,
+            'created_by_name' => $this->createdBy?->name,
         ];
     }
 }

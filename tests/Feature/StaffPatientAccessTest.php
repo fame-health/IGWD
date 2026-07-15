@@ -74,6 +74,42 @@ class StaffPatientAccessTest extends TestCase
         $this->getJson("/api/v1/dialysis-sessions/{$otherSession->id}")->assertForbidden();
     }
 
+    public function test_nurse_can_open_patient_summary_when_optional_related_data_is_missing(): void
+    {
+        $patient = Patient::create([
+            'medical_record_number' => 'RM-SUMMARY-0001',
+            'name' => 'Pasien Summary',
+            'gender' => 'perempuan',
+            'patient_status' => 'Aktif',
+        ]);
+
+        DialysisSchedule::create([
+            'patient_id' => $patient->id,
+            'hd_date' => now()->toDateString(),
+            'shift' => 'Pagi',
+            'nurse_name' => 'Perawat Summary',
+            'attendance_status' => 'Terjadwal',
+        ]);
+
+        $nurse = User::factory()->create([
+            'name' => 'Perawat Summary',
+            'role' => 'perawat',
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($nurse);
+
+        $this->getJson("/api/v1/patients/{$patient->id}/summary")
+            ->assertOk()
+            ->assertJsonPath('data.patient.id', $patient->id)
+            ->assertJsonPath('data.medical_profile', null)
+            ->assertJsonPath('data.medical_data', null)
+            ->assertJsonPath('data.last_dialysis_session', null)
+            ->assertJsonPath('data.last_session', null)
+            ->assertJsonPath('data.last_daily_monitoring', null)
+            ->assertJsonPath('data.last_monitoring', null);
+    }
+
     public function test_doctor_only_sees_patients_assigned_to_their_schedule(): void
     {
         [$assignedPatient, $otherPatient, $assignedSession, $otherSession] = $this->makeAssignedPatients();

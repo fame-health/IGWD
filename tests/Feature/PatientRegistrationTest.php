@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -40,12 +41,13 @@ class PatientRegistrationTest extends TestCase
             ->assertJsonPath('data.user.email', 'andi@example.com')
             ->assertJsonPath('data.user.role', 'pasien')
             ->assertJsonPath('data.patient.name', 'Andi Pasien')
+            ->assertJsonPath('data.patient.age', Carbon::parse('1985-05-12')->age)
             ->assertJsonPath('data.medical_profile.main_diagnosis', 'CKD Stage 5')
             ->assertJsonStructure([
                 'data' => [
                     'token',
                     'user' => ['id', 'name', 'email', 'role', 'patient_id', 'is_active'],
-                    'patient' => ['id', 'medical_record_number', 'name', 'gender', 'patient_status'],
+                    'patient' => ['id', 'medical_record_number', 'name', 'age', 'gender', 'patient_status'],
                     'medical_profile',
                 ],
             ]);

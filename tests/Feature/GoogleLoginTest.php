@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
@@ -191,6 +192,7 @@ class GoogleLoginTest extends TestCase
             ->assertJsonPath('data.user.profile_complete', true)
             ->assertJsonPath('data.user.requires_patient_profile', false)
             ->assertJsonPath('data.patient.name', 'Pasien Google')
+            ->assertJsonPath('data.patient.age', Carbon::parse('1990-08-17')->age)
             ->assertJsonPath('data.patient.gender', 'laki-laki')
             ->assertJsonPath('data.patient.payment_status', 'BPJS');
 

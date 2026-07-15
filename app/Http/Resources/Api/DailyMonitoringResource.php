@@ -22,12 +22,16 @@ class DailyMonitoringResource extends JsonResource
             'today_weight' => $this->today_weight,
             'daily_weight_gain_kg' => $this->daily_weight_gain_kg,
             'fluid_intake_ml' => $this->fluid_intake_ml,
+            'insensible_water_loss_ml' => $this->insensible_water_loss_ml,
+            'fluid_output_ml' => $this->fluid_output_ml,
             'daily_fluid_limit_ml' => $this->daily_fluid_limit_ml,
             'fluid_difference_ml' => $this->fluid_difference_ml,
             'fluid_status' => $this->fluid_status,
             'symptom_notes' => $this->symptom_notes,
             'staff_notes' => $this->staff_notes,
             'risk_status' => $this->risk_status,
+            'created_by' => $this->created_by,
+            'created_by_name' => $this->createdBy?->name,
         ];
     }
 }

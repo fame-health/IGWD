@@ -27,6 +27,8 @@ class DialysisSessionResource extends JsonResource
             'hd_duration_minutes' => $this->hd_duration_minutes,
             'staff_notes' => $this->staff_notes,
             'doctor_notes' => $this->doctor_notes,
+            'created_by' => $this->created_by,
+            'created_by_name' => $this->createdBy?->name,
         ];
     }
 }

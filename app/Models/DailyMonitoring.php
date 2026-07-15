@@ -22,6 +22,8 @@ class DailyMonitoring extends Model
         'today_weight',
         'daily_weight_gain_kg',
         'fluid_intake_ml',
+        'insensible_water_loss_ml',
+        'fluid_output_ml',
         'daily_fluid_limit_ml',
         'fluid_difference_ml',
         'fluid_status',

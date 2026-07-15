@@ -23,6 +23,8 @@ class VitalSignResource extends JsonResource
             'blood_pressure_during' => $this->blood_pressure_during,
             'blood_pressure_after' => $this->blood_pressure_after,
             'complaints' => $this->complaints,
+            'created_by' => $this->created_by,
+            'created_by_name' => $this->createdBy?->name,
         ];
     }
 }

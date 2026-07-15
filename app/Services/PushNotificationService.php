@@ -15,6 +15,10 @@ use Illuminate\Support\Collection;
 
 class PushNotificationService
 {
+    private const RISK_ALERTS_CHANNEL = 'risk_alerts_ringtone';
+
+    private const SCHEDULE_REMINDERS_CHANNEL = 'schedule_reminders_ringtone';
+
     public function __construct(private readonly FirebaseCloudMessagingService $fcm) {}
 
     public function sendDialysisScheduleCreated(DialysisSchedule $schedule): void
@@ -26,7 +30,7 @@ class PushNotificationService
             'Jadwal HD Baru',
             'Jadwal HD Anda pada '.$this->scheduleLabel($schedule, $scheduledAt).' telah dibuat.',
             $this->scheduleData($schedule, 'dialysis_schedule', $scheduledAt),
-            'schedule_reminders'
+            self::SCHEDULE_REMINDERS_CHANNEL
         );
     }
 
@@ -39,7 +43,7 @@ class PushNotificationService
             'Jadwal HD Diperbarui',
             'Jadwal HD Anda pada '.$this->scheduleLabel($schedule, $scheduledAt).' telah diperbarui.',
             $this->scheduleData($schedule, 'dialysis_schedule', $scheduledAt),
-            'schedule_reminders'
+            self::SCHEDULE_REMINDERS_CHANNEL
         );
     }
 
@@ -61,7 +65,7 @@ class PushNotificationService
                 ...$this->scheduleData($schedule, 'schedule_reminder', $scheduledAt),
                 'reminder_type' => $reminderType,
             ],
-            'schedule_reminders'
+            self::SCHEDULE_REMINDERS_CHANNEL
         );
     }
 
@@ -84,7 +88,7 @@ class PushNotificationService
                 'alert_date' => $riskAlert->alert_date?->toDateString(),
                 'alert_time' => $riskAlert->alert_time,
             ],
-            'risk_alerts'
+            self::RISK_ALERTS_CHANNEL
         );
 
         // Send to staff (doctors and nurses)
@@ -107,7 +111,7 @@ class PushNotificationService
                     'alert_level' => $riskAlert->alert_level,
                     'patient_name' => $riskAlert->patient?->name,
                 ],
-                'risk_alerts'
+                self::RISK_ALERTS_CHANNEL
             );
         }
     }
@@ -124,7 +128,7 @@ class PushNotificationService
                 'monitoring_id' => $monitoring->id,
                 'patient_id' => $monitoring->patient_id,
             ],
-            'risk_alerts'
+            self::RISK_ALERTS_CHANNEL
         );
     }
 
@@ -140,7 +144,7 @@ class PushNotificationService
                 'dialysis_session_id' => $session->id,
                 'patient_id' => $session->patient_id,
             ],
-            'risk_alerts'
+            self::RISK_ALERTS_CHANNEL
         );
     }
 
@@ -157,7 +161,7 @@ class PushNotificationService
                 'model' => 'patient',
                 'action' => 'updated',
             ],
-            'risk_alerts'
+            self::RISK_ALERTS_CHANNEL
         );
     }
 
@@ -175,7 +179,7 @@ class PushNotificationService
                 'model' => 'medical_profile',
                 'action' => 'updated',
             ],
-            'risk_alerts'
+            self::RISK_ALERTS_CHANNEL
         );
     }
 
@@ -193,7 +197,7 @@ class PushNotificationService
                 'model' => 'education',
                 'action' => 'created',
             ],
-            'risk_alerts'
+            self::RISK_ALERTS_CHANNEL
         );
     }
 
@@ -211,7 +215,7 @@ class PushNotificationService
                 'model' => 'education',
                 'action' => 'updated',
             ],
-            'risk_alerts'
+            self::RISK_ALERTS_CHANNEL
         );
     }
 
@@ -229,7 +233,7 @@ class PushNotificationService
                 'model' => 'user',
                 'action' => 'updated',
             ],
-            'risk_alerts'
+            self::RISK_ALERTS_CHANNEL
         );
     }
 

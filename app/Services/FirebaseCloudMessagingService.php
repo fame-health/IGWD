@@ -67,7 +67,7 @@ class FirebaseCloudMessagingService
                         'android' => [
                             'priority' => 'high',
                             'notification' => [
-                                'channel_id' => $channelId ?: config('services.firebase.android_channel_id', 'idwg_notifications'),
+                                'channel_id' => $channelId ?: config('services.firebase.android_channel_id', 'risk_alerts_ringtone'),
                                 'sound' => 'default',
                             ],
                         ],

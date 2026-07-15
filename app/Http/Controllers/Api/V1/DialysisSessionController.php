@@ -13,12 +13,13 @@ class DialysisSessionController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $query = DialysisSession::query()->with('patient')
+        $query = DialysisSession::query()->with(['patient', 'createdBy'])
             ->when($request->filled('patient_id'), fn ($query) => $query->where('patient_id', $request->patient_id))
             ->when($request->filled('risk_category'), fn ($query) => $query->where('risk_category', $request->risk_category))
             ->when($request->filled('shift'), fn ($query) => $query->where('shift', $request->shift));
 
         $this->scopeForPatientRole($query, $request);
+        $this->scopeForCreator($query, $request);
         $this->applyDateFilters($query, $request, 'session_date');
 
         return $this->success(DialysisSessionResource::collection($query->orderByDesc('session_date')->paginate($request->integer('per_page', 15))));
@@ -39,9 +40,12 @@ class DialysisSessionController extends BaseApiController
             return $this->deny();
         }
 
-        $session = DialysisSession::create($request->validated());
+        $data = $request->validated();
+        $data['created_by'] ??= $request->user()?->id;
 
-        return $this->success(DialysisSessionResource::make($session), 'Sesi HD berhasil dibuat.', 201);
+        $session = DialysisSession::create($data);
+
+        return $this->success(DialysisSessionResource::make($session->load(['patient', 'createdBy'])), 'Sesi HD berhasil dibuat.', 201);
     }
 
     public function update(DialysisSessionRequest $request, DialysisSession $dialysisSession): JsonResponse

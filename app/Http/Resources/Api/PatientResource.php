@@ -15,6 +15,7 @@ class PatientResource extends JsonResource
             'name' => $this->name,
             'nik' => $this->nik,
             'birth_date' => $this->birth_date?->toDateString(),
+            'age' => $this->birth_date?->age,
             'gender' => $this->gender,
             'address' => $this->address,
             'phone' => $this->phone,

@@ -12,12 +12,13 @@ class DailyMonitoringController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $query = DailyMonitoring::query()->with('patient')
+        $query = DailyMonitoring::query()->with(['patient', 'createdBy'])
             ->when($request->filled('patient_id'), fn ($query) => $query->where('patient_id', $request->patient_id))
             ->when($request->filled('risk_status'), fn ($query) => $query->where('risk_status', $request->risk_status))
             ->when($request->filled('fluid_status'), fn ($query) => $query->where('fluid_status', $request->fluid_status));
 
         $this->scopeForPatientRole($query, $request);
+        $this->scopeForCreator($query, $request);
         $this->applyDateFilters($query, $request, 'monitoring_date');
 
         return $this->success(DailyMonitoringResource::collection($query->orderByDesc('monitoring_date')->paginate($request->integer('per_page', 15))));
@@ -38,9 +39,12 @@ class DailyMonitoringController extends BaseApiController
             return $this->deny();
         }
 
-        $monitoring = DailyMonitoring::create($request->validated());
+        $data = $request->validated();
+        $data['created_by'] ??= $request->user()?->id;
 
-        return $this->success(DailyMonitoringResource::make($monitoring), 'Monitoring harian berhasil dibuat.', 201);
+        $monitoring = DailyMonitoring::create($data);
+
+        return $this->success(DailyMonitoringResource::make($monitoring->load(['patient', 'createdBy'])), 'Monitoring harian berhasil dibuat.', 201);
     }
 
     public function update(DailyMonitoringRequest $request, DailyMonitoring $dailyMonitoring): JsonResponse

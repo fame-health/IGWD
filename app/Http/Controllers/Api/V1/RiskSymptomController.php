@@ -12,11 +12,12 @@ class RiskSymptomController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $query = RiskSymptom::query()->with('patient')
+        $query = RiskSymptom::query()->with(['patient', 'createdBy'])
             ->when($request->filled('patient_id'), fn ($query) => $query->where('patient_id', $request->patient_id))
             ->when($request->filled('system_risk_status'), fn ($query) => $query->where('system_risk_status', $request->system_risk_status));
 
         $this->scopeForPatientRole($query, $request);
+        $this->scopeForCreator($query, $request);
         $this->applyDateFilters($query, $request, 'symptom_date');
 
         return $this->success(RiskSymptomResource::collection($query->orderByDesc('symptom_date')->paginate($request->integer('per_page', 15))));
@@ -37,9 +38,12 @@ class RiskSymptomController extends BaseApiController
             return $this->deny();
         }
 
-        $symptom = RiskSymptom::create($request->validated());
+        $data = $request->validated();
+        $data['created_by'] ??= $request->user()?->id;
 
-        return $this->success(RiskSymptomResource::make($symptom), 'Gejala risiko berhasil dibuat.', 201);
+        $symptom = RiskSymptom::create($data);
+
+        return $this->success(RiskSymptomResource::make($symptom->load(['patient', 'createdBy'])), 'Gejala risiko berhasil dibuat.', 201);
     }
 
     public function update(RiskSymptomRequest $request, RiskSymptom $riskSymptom): JsonResponse

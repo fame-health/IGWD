@@ -98,6 +98,17 @@ class BaseApiController extends Controller
             ->when($request->filled('end_date'), fn (Builder $query) => $query->whereDate($column, '<=', $request->end_date));
     }
 
+    protected function scopeForCreator(Builder $query, Request $request, string $column = 'created_by'): Builder
+    {
+        if (! $request->boolean('mine') && $request->input('created_by') !== 'me') {
+            return $query;
+        }
+
+        $userId = $request->user()?->id;
+
+        return $userId ? $query->where($column, $userId) : $query->whereRaw('1 = 0');
+    }
+
     /**
      * Staff ownership follows the current schedule assignment design:
      * nurses are matched by nurse_name, doctors by doctor_name.
