@@ -18,7 +18,7 @@ class ManageAppSettings extends ManageRecords
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Kelola variabel global dan konfigurasi sistem IGWD.';
+        return 'Kelola variabel global dan konfigurasi sistem JUPE BB.';
     }
 
     protected function getHeaderActions(): array

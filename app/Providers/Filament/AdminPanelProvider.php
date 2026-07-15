@@ -31,7 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('IDWG Monitoring')
+            ->brandName('JUPE BB')
             ->colors([
                 'primary' => Color::Teal,
                 'gray' => Color::Slate,

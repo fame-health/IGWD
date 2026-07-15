@@ -1,6 +1,6 @@
 @php
-    $appName = config('app.name', 'IDWG Monitoring');
-    $displayName = $appName === 'Laravel' ? 'IDWG Monitoring' : $appName;
+    $appName = config('app.name', 'JUPE BB');
+    $displayName = $appName === 'Laravel' ? 'JUPE BB' : $appName;
 @endphp
 
 <!DOCTYPE html>
@@ -8,7 +8,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="IDWG Monitoring membantu tim hemodialisis memantau berat harian, jadwal HD, gejala risiko, edukasi pasien, dan alert klinis dalam satu sistem.">
+        <meta name="description" content="Jadwal untuk pengontrolan berat badan.">
 
         <title>{{ $displayName }} | Monitoring Hemodialisis</title>
 
@@ -836,7 +836,7 @@
                 <div class="hero-inner">
                     <div class="hero-copy">
                         <p class="eyebrow">Aplikasi monitoring hemodialisis</p>
-                        <h1>IDWG Monitoring</h1>
+                        <h1>JUPE BB</h1>
                         <p>
                             Sistem terpadu untuk memantau berat harian, jadwal hemodialisis, gejala risiko, edukasi pasien, dan tindak lanjut alert klinis secara lebih cepat.
                         </p>
