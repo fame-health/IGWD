@@ -54,7 +54,18 @@ class DashboardController extends BaseApiController
             'pasien' => [
                 'jadwal_hd_berikutnya' => DialysisScheduleResource::make(DialysisSchedule::where('patient_id', $user->patient_id)->whereDate('hd_date', '>=', $today)->orderBy('hd_date')->first()),
                 'monitoring_harian_terakhir' => DailyMonitoringResource::make(DailyMonitoring::where('patient_id', $user->patient_id)->latest('monitoring_date')->first()),
-                'edukasi_terbaru' => EducationResource::make(Education::where('patient_id', $user->patient_id)->latest('education_date')->first()),
+                'edukasi_terbaru' => EducationResource::make(
+                    Education::where(function($q) use ($user) {
+                        $q->where('is_general', true)
+                          ->orWhere('patient_id', $user->patient_id);
+                    })->latest('education_date')->first()
+                ),
+                'recent_educations' => EducationResource::collection(
+                    Education::where(function($q) use ($user) {
+                        $q->where('is_general', true)
+                          ->orWhere('patient_id', $user->patient_id);
+                    })->latest('education_date')->limit(3)->get()
+                ),
                 'status_risiko_terakhir' => DailyMonitoring::where('patient_id', $user->patient_id)->latest('monitoring_date')->value('risk_status'),
             ],
             default => [

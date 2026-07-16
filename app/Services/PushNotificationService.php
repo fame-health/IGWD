@@ -245,13 +245,17 @@ class PushNotificationService
         return Carbon::parse($date.' '.$time, $this->timezone());
     }
 
-    private function patientUserIds(int $patientId): Collection
+    private function patientUserIds(?int $patientId): Collection
     {
-        return User::query()
+        $query = User::query()
             ->where('is_active', true)
-            ->where('role', 'pasien')
-            ->where('patient_id', $patientId)
-            ->pluck('id');
+            ->where('role', 'pasien');
+
+        if ($patientId !== null) {
+            $query->where('patient_id', $patientId);
+        }
+
+        return $query->pluck('id');
     }
 
     private function scheduleLabel(DialysisSchedule $schedule, Carbon $scheduledAt): string
