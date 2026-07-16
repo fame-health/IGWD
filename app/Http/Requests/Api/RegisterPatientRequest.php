@@ -38,6 +38,7 @@ class RegisterPatientRequest extends BaseApiRequest
             'medical_profile.allergies' => ['nullable', 'string'],
             'medical_profile.routine_medications' => ['nullable', 'string'],
             'medical_profile.important_notes' => ['nullable', 'string'],
+            'medical_profile.blood_type' => ['nullable', 'string', 'max:5'],
         ];
     }
 }

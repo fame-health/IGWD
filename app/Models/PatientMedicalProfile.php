@@ -22,6 +22,7 @@ class PatientMedicalProfile extends Model
         'allergies',
         'routine_medications',
         'important_notes',
+        'blood_type',
     ];
 
     protected function casts(): array

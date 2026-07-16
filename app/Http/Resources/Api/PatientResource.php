@@ -29,6 +29,8 @@ class PatientResource extends JsonResource
             'patient_status' => $this->patient_status,
             'medical_history' => $this->medicalProfile?->medical_history,
             'comorbidities' => $this->medicalProfile?->comorbidities,
+            'hemodialysis_start_date' => $this->medicalProfile?->hemodialysis_start_date?->toDateString(),
+            'blood_type' => $this->medicalProfile?->blood_type,
         ];
     }
 }
