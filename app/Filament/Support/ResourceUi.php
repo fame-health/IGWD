@@ -2,6 +2,7 @@
 
 namespace App\Filament\Support;
 
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -154,14 +155,35 @@ class ResourceUi
                 Textarea::make('description')->label('Deskripsi')->columnSpanFull(),
             ],
             'educations' => [
-                self::patientSelect(),
-                DatePicker::make('education_date')->label('Tanggal Edukasi')->required(),
-                Textarea::make('education_materials')->label('Materi Edukasi')->columnSpanFull(),
-                Select::make('patient_understanding')->label('Pemahaman Pasien')->options(self::options(['Baik', 'Cukup', 'Kurang'])),
-                Select::make('fluid_compliance')->label('Kepatuhan Cairan')->options(self::options(['Baik', 'Cukup', 'Kurang'])),
-                Select::make('schedule_compliance')->label('Kepatuhan Jadwal')->options(self::options(['Hadir', 'Terlambat', 'Tidak Hadir'])),
-                TextInput::make('educator_name')->label('Edukator')->maxLength(255),
-                Textarea::make('follow_up_notes')->label('Catatan Tindak Lanjut')->columnSpanFull(),
+                Section::make('Informasi Dasar')
+                    ->schema([
+                        TextInput::make('title')->label('Judul Edukasi')->required()->maxLength(255),
+                        Select::make('category')->label('Kategori')->options(self::options(['Video', 'Poster', 'Artikel', 'Materi Pasien']))->required(),
+                        Toggle::make('is_general')->label('Edukasi Umum (Dilihat Semua Pasien)')->default(false)->reactive(),
+                        self::patientSelect(false)->hidden(fn ($get) => $get('is_general')),
+                        DatePicker::make('education_date')->label('Tanggal')->default(now())->required(),
+                    ])->columns(2),
+
+                Section::make('Konten Edukasi')
+                    ->schema([
+                        Textarea::make('content')->label('Deskripsi/Konten Artikel')->rows(5)->columnSpanFull(),
+                        TextInput::make('youtube_url')->label('Link YouTube')->placeholder('https://www.youtube.com/watch?v=...')->url(),
+                        FileUpload::make('image_path')->label('Poster/Gambar')->image()->directory('education-posters'),
+                        Textarea::make('education_materials')->label('Catatan Materi Tambahan')->columnSpanFull(),
+                    ]),
+
+                Section::make('Evaluasi (Khusus Per Pasien)')
+                    ->hidden(fn ($get) => $get('is_general'))
+                    ->schema([
+                        Grid::make(3)
+                            ->schema([
+                                Select::make('patient_understanding')->label('Pemahaman')->options(self::options(['Baik', 'Cukup', 'Kurang'])),
+                                Select::make('fluid_compliance')->label('Kepatuhan Cairan')->options(self::options(['Baik', 'Cukup', 'Kurang'])),
+                                Select::make('schedule_compliance')->label('Kepatuhan Jadwal')->options(self::options(['Hadir', 'Terlambat', 'Tidak Hadir'])),
+                            ]),
+                        TextInput::make('educator_name')->label('Edukator')->maxLength(255),
+                        Textarea::make('follow_up_notes')->label('Catatan Tindak Lanjut')->columnSpanFull(),
+                    ]),
             ],
             'risk_alerts' => [
                 self::patientSelect(),
@@ -289,12 +311,16 @@ class ResourceUi
                 TextColumn::make('system_risk_status')->label('Risiko')->badge()->color(fn (?string $state): string => self::statusColor($state)),
             ],
             'educations' => [
+                TextColumn::make('title')->label('Judul')->searchable()->sortable(),
+                TextColumn::make('category')->label('Kategori')->badge()->color(fn (string $state): string => match($state) {
+                    'Video' => 'danger',
+                    'Poster' => 'success',
+                    'Artikel' => 'info',
+                    default => 'gray',
+                }),
+                IconColumn::make('is_general')->label('Umum')->boolean(),
+                TextColumn::make('patient.name')->label('Pasien')->placeholder('Semua Pasien'),
                 TextColumn::make('education_date')->label('Tanggal')->date()->sortable(),
-                TextColumn::make('patient.name')->label('Pasien')->searchable(),
-                TextColumn::make('patient_understanding')->label('Pemahaman')->badge()->color(fn (?string $state): string => self::statusColor($state)),
-                TextColumn::make('fluid_compliance')->label('Cairan')->badge()->color(fn (?string $state): string => self::statusColor($state)),
-                TextColumn::make('schedule_compliance')->label('Jadwal')->badge()->color(fn (?string $state): string => self::statusColor($state)),
-                TextColumn::make('educator_name')->label('Edukator'),
             ],
             'risk_alerts' => [
                 TextColumn::make('alert_date')->label('Tanggal')->date()->sortable(),

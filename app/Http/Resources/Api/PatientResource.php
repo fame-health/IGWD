@@ -31,6 +31,7 @@ class PatientResource extends JsonResource
             'comorbidities' => $this->medicalProfile?->comorbidities,
             'hemodialysis_start_date' => $this->medicalProfile?->hemodialysis_start_date?->toDateString(),
             'blood_type' => $this->medicalProfile?->blood_type,
+            'educations' => EducationResource::collection($this->whenLoaded('educations')),
         ];
     }
 }

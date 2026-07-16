@@ -12,14 +12,22 @@ class EducationController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Education::query()->with(['patient', 'createdBy'])
-            ->when($request->filled('patient_id'), fn ($query) => $query->where('patient_id', $request->patient_id));
+        $query = Education::query()->with(['patient', 'createdBy']);
 
-        $this->scopeForPatientRole($query, $request);
-        $this->scopeForCreator($query, $request);
+        if ($request->user()?->role === 'pasien') {
+            $patientId = $request->user()->patient_id;
+            $query->where(function ($q) use ($patientId) {
+                $q->where('is_general', true)
+                  ->orWhere('patient_id', $patientId);
+            });
+        } else {
+            $query->when($request->filled('patient_id'), fn ($q) => $q->where('patient_id', $request->patient_id))
+                  ->when($request->boolean('general_only'), fn ($q) => $q->where('is_general', true));
+        }
+
         $this->applyDateFilters($query, $request, 'education_date');
 
-        return $this->success(EducationResource::collection($query->orderByDesc('education_date')->paginate($request->integer('per_page', 15))));
+        return $this->success(EducationResource::collection($query->orderByDesc('is_general')->orderByDesc('education_date')->paginate($request->integer('per_page', 15))));
     }
 
     public function show(Request $request, Education $education): JsonResponse

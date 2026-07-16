@@ -14,8 +14,14 @@ class Education extends Model
 
     protected $fillable = [
         'patient_id',
+        'title',
+        'category',
         'education_date',
         'education_materials',
+        'content',
+        'youtube_url',
+        'image_path',
+        'is_general',
         'patient_understanding',
         'fluid_compliance',
         'schedule_compliance',
