@@ -21,6 +21,8 @@ class DialysisSessionRequest extends BaseApiRequest
             'hd_duration_minutes' => ['nullable', 'integer', 'min:0'],
             'blood_pressure_before' => ['nullable', 'string', 'max:20'],
             'blood_pressure_after' => ['nullable', 'string', 'max:20'],
+            'blood_sugar_before' => ['nullable', 'integer', 'min:0', 'max:1000'],
+            'blood_sugar_after' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'staff_notes' => ['nullable', 'string'],
         ];
     }

@@ -27,6 +27,8 @@ class DialysisSession extends Model
         'hd_duration_minutes',
         'blood_pressure_before',
         'blood_pressure_after',
+        'blood_sugar_before',
+        'blood_sugar_after',
         'staff_notes',
         'doctor_notes',
         'created_by',
