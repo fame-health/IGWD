@@ -25,6 +25,8 @@ class DialysisSessionResource extends JsonResource
             'current_post_hd_weight' => $this->current_post_hd_weight,
             'target_ultrafiltration' => $this->target_ultrafiltration,
             'hd_duration_minutes' => $this->hd_duration_minutes,
+            'blood_pressure_before' => $this->blood_pressure_before,
+            'blood_pressure_after' => $this->blood_pressure_after,
             'staff_notes' => $this->staff_notes,
             'doctor_notes' => $this->doctor_notes,
             'created_by' => $this->created_by,

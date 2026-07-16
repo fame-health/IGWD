@@ -24,6 +24,7 @@ class CompletePatientProfileRequest extends BaseApiRequest
 
             'medical_profile' => ['sometimes', 'array'],
             'medical_profile.main_diagnosis' => ['nullable', 'string', 'max:255'],
+            'medical_profile.medical_history' => ['nullable', 'string'],
             'medical_profile.comorbidities' => ['nullable', 'string'],
             'medical_profile.hemodialysis_start_date' => ['nullable', 'date'],
             'medical_profile.hemodialysis_frequency' => ['nullable', Rule::in(['1x per minggu', '2x per minggu', '3x per minggu'])],

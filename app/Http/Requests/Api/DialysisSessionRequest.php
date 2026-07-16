@@ -19,6 +19,8 @@ class DialysisSessionRequest extends BaseApiRequest
             'current_post_hd_weight' => ['nullable', 'numeric', 'gt:0'],
             'target_ultrafiltration' => ['nullable', 'numeric', 'min:0'],
             'hd_duration_minutes' => ['nullable', 'integer', 'min:0'],
+            'blood_pressure_before' => ['nullable', 'string', 'max:20'],
+            'blood_pressure_after' => ['nullable', 'string', 'max:20'],
             'staff_notes' => ['nullable', 'string'],
         ];
     }

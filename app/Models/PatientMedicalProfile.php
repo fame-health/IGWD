@@ -13,6 +13,7 @@ class PatientMedicalProfile extends Model
     protected $fillable = [
         'patient_id',
         'main_diagnosis',
+        'medical_history',
         'comorbidities',
         'hemodialysis_start_date',
         'hemodialysis_frequency',

@@ -23,6 +23,8 @@ class PatientResource extends JsonResource
             'responsible_person_phone' => $this->responsible_person_phone,
             'payment_status' => $this->payment_status,
             'patient_status' => $this->patient_status,
+            'medical_history' => $this->medicalProfile?->medical_history,
+            'comorbidities' => $this->medicalProfile?->comorbidities,
         ];
     }
 }

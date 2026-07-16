@@ -17,6 +17,7 @@ class MedicalProfileResource extends JsonResource
             'id' => $this->id,
             'patient_id' => $this->patient_id,
             'main_diagnosis' => $this->main_diagnosis,
+            'medical_history' => $this->medical_history,
             'comorbidities' => $this->comorbidities,
             'hemodialysis_start_date' => $this->hemodialysis_start_date?->toDateString(),
             'hemodialysis_frequency' => $this->hemodialysis_frequency,

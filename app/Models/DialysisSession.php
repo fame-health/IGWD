@@ -25,6 +25,8 @@ class DialysisSession extends Model
         'current_post_hd_weight',
         'target_ultrafiltration',
         'hd_duration_minutes',
+        'blood_pressure_before',
+        'blood_pressure_after',
         'staff_notes',
         'doctor_notes',
         'created_by',
