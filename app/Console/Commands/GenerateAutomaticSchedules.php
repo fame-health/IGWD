@@ -2,9 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Patient;
 use App\Models\DialysisSchedule;
-use Carbon\Carbon;
+use App\Models\Patient;
 use Illuminate\Console\Command;
 
 class GenerateAutomaticSchedules extends Command
@@ -21,63 +20,69 @@ class GenerateAutomaticSchedules extends Command
      *
      * @var string
      */
-    protected $description = 'Generate dialysis schedules automatically for Monday and Friday.';
+    protected $description = 'Generate upcoming dialysis schedules automatically from Monday and Friday.';
 
     /**
      * Execute the console command.
      */
-    public function handle(\App\Services\PushNotificationService $pushNotificationService): int
+    public function handle(): int
     {
-        $today = now();
+        $timezone = config('hd.timezone', config('app.timezone', 'Asia/Jakarta'));
+        $today = now($timezone);
         $dayOfWeek = $today->dayOfWeek;
 
         // We only generate for Monday (1) and Friday (5) as requested
-        if (!in_array($dayOfWeek, [1, 5])) {
-            $this->info("Today is not Monday or Friday. Skipping.");
+        if (! in_array($dayOfWeek, [1, 5])) {
+            $this->info('Today is not Monday or Friday. Skipping.');
+
             return self::SUCCESS;
         }
 
-        $dayNames = [
-            1 => 'Senin',
-            5 => 'Jumat',
+        $upcomingSchedules = [
+            1 => [
+                'date' => $today->copy()->addDays(4),
+                'day_name' => 'Jumat',
+            ],
+            5 => [
+                'date' => $today->copy()->addDays(3),
+                'day_name' => 'Senin',
+            ],
         ];
-        $dayName = $dayNames[$dayOfWeek];
+        $targetDate = $upcomingSchedules[$dayOfWeek]['date'];
+        $dayName = $upcomingSchedules[$dayOfWeek]['day_name'];
 
         $patients = Patient::where('patient_status', 'Aktif')->get();
         $count = 0;
 
         foreach ($patients as $patient) {
-            // Check if schedule already exists for today
+            // Check if schedule already exists for the upcoming HD day.
             $exists = DialysisSchedule::where('patient_id', $patient->id)
-                ->whereDate('hd_date', $today->toDateString())
+                ->whereDate('hd_date', $targetDate->toDateString())
                 ->exists();
 
-            if (!$exists) {
+            if (! $exists) {
                 // Get shift from the most recent previous schedule
                 $lastSchedule = DialysisSchedule::where('patient_id', $patient->id)
-                    ->whereDate('hd_date', '<', $today->toDateString())
+                    ->whereDate('hd_date', '<', $targetDate->toDateString())
                     ->orderBy('hd_date', 'desc')
                     ->first();
 
                 $shift = $lastSchedule ? $lastSchedule->shift : 'Pagi';
 
-                $schedule = DialysisSchedule::create([
+                DialysisSchedule::create([
                     'patient_id' => $patient->id,
-                    'hd_date' => $today->toDateString(),
+                    'hd_date' => $targetDate->toDateString(),
                     'day_name' => $dayName,
                     'shift' => $shift,
                     'attendance_status' => 'Terjadwal',
                     'notes' => 'Otomatis dibuat oleh sistem (Jadwal Rutin)',
                 ]);
 
-                // Send notification
-                $pushNotificationService->sendDialysisScheduleCreated($schedule);
-
                 $count++;
             }
         }
 
-        $this->info("Generated {$count} schedules and sent notifications for {$dayName}.");
+        $this->info("Generated {$count} schedules for {$dayName} ({$targetDate->toDateString()}).");
 
         return self::SUCCESS;
     }

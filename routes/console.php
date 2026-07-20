@@ -10,4 +10,7 @@ Artisan::command('inspire', function () {
 
 Schedule::command('app:check-missing-daily-monitoring')->dailyAt('20:00');
 Schedule::command('app:send-dialysis-schedule-reminders')->everyFiveMinutes();
-Schedule::command('app:generate-automatic-schedules')->mondays()->fridays()->at('06:00');
+Schedule::command('app:generate-automatic-schedules')
+    ->days([1, 5])
+    ->timezone(config('hd.timezone', config('app.timezone')))
+    ->at('06:00');
