@@ -29,6 +29,7 @@ class DialysisSessionResource extends JsonResource
             'blood_pressure_after' => $this->blood_pressure_after,
             'blood_sugar_before' => $this->blood_sugar_before,
             'blood_sugar_after' => $this->blood_sugar_after,
+            'daily_fluid_intake_target_ml' => $this->daily_fluid_intake_target_ml,
             'staff_notes' => $this->staff_notes,
             'doctor_notes' => $this->doctor_notes,
             'created_by' => $this->created_by,

@@ -14,8 +14,19 @@ class DailyMonitoringCalculationService
 
     public function calculate(DailyMonitoring $monitoring): array
     {
-        $fluidLimit = $monitoring->daily_fluid_limit_ml
-            ?? (int) AppSetting::value('default_daily_fluid_limit_ml', 1000);
+        $fluidLimit = $monitoring->daily_fluid_limit_ml;
+
+        if ($fluidLimit === null) {
+            $latestSession = DialysisSession::query()
+                ->where('patient_id', $monitoring->patient_id)
+                ->whereNotNull('daily_fluid_intake_target_ml')
+                ->latest('session_date')
+                ->latest('id')
+                ->first();
+
+            $fluidLimit = $latestSession?->daily_fluid_intake_target_ml
+                ?? (int) AppSetting::value('default_daily_fluid_limit_ml', 1000);
+        }
 
         $dailyWeightGain = null;
         if ($monitoring->last_post_hd_weight !== null) {

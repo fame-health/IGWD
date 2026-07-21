@@ -23,6 +23,7 @@ class DialysisSessionRequest extends BaseApiRequest
             'blood_pressure_after' => ['nullable', 'string', 'max:20'],
             'blood_sugar_before' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'blood_sugar_after' => ['nullable', 'integer', 'min:0', 'max:1000'],
+            'daily_fluid_intake_target_ml' => ['nullable', 'integer', 'min:0'],
             'staff_notes' => ['nullable', 'string'],
         ];
     }

@@ -29,6 +29,7 @@ class DialysisSession extends Model
         'blood_pressure_after',
         'blood_sugar_before',
         'blood_sugar_after',
+        'daily_fluid_intake_target_ml',
         'staff_notes',
         'doctor_notes',
         'created_by',
