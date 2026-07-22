@@ -54,20 +54,29 @@ class DialysisSessionController extends BaseApiController
                 ->first();
 
             if (!$existingSchedule) {
+                // Try to find source metadata from current session's schedule
                 $originalSchedule = $session->schedule;
+
+                // If not found (manual session), try to find the most recent schedule for this patient
+                if (!$originalSchedule) {
+                    $originalSchedule = \App\Models\DialysisSchedule::where('patient_id', $session->patient_id)
+                        ->orderBy('hd_date', 'desc')
+                        ->first();
+                }
+
                 \App\Models\DialysisSchedule::create([
                     'patient_id' => $session->patient_id,
                     'hd_date' => $nextDate->toDateString(),
                     'day_name' => $nextDate->translatedFormat('l'),
                     'start_time' => $originalSchedule?->start_time,
                     'end_time' => $originalSchedule?->end_time,
-                    'shift' => $session->shift,
+                    'shift' => $session->shift ?: ($originalSchedule?->shift ?: 'Pagi'),
                     'room' => $originalSchedule?->room,
                     'machine_number' => $originalSchedule?->machine_number,
                     'nurse_name' => $request->user()->role === 'perawat' ? $request->user()->name : $originalSchedule?->nurse_name,
                     'doctor_name' => $originalSchedule?->doctor_name,
                     'attendance_status' => 'Terjadwal',
-                    'notes' => 'Jadwal otomatis (3 hari setelah sesi terakhir)',
+                    'notes' => 'Jadwal otomatis (Dibuat otomatis setelah Sesi HD)',
                 ]);
             }
         } catch (\Exception $e) {
