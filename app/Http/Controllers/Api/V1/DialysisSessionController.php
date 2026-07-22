@@ -45,6 +45,36 @@ class DialysisSessionController extends BaseApiController
 
         $session = DialysisSession::create($data);
 
+        // Auto-generate next schedule (3 days after current session)
+        try {
+            $nextDate = \Illuminate\Support\Carbon::parse($session->session_date)->addDays(3);
+
+            $existingSchedule = \App\Models\DialysisSchedule::where('patient_id', $session->patient_id)
+                ->whereDate('hd_date', $nextDate->toDateString())
+                ->first();
+
+            if (!$existingSchedule) {
+                $originalSchedule = $session->schedule;
+                \App\Models\DialysisSchedule::create([
+                    'patient_id' => $session->patient_id,
+                    'hd_date' => $nextDate->toDateString(),
+                    'day_name' => $nextDate->translatedFormat('l'),
+                    'start_time' => $originalSchedule?->start_time,
+                    'end_time' => $originalSchedule?->end_time,
+                    'shift' => $session->shift,
+                    'room' => $originalSchedule?->room,
+                    'machine_number' => $originalSchedule?->machine_number,
+                    'nurse_name' => $request->user()->role === 'perawat' ? $request->user()->name : $originalSchedule?->nurse_name,
+                    'doctor_name' => $originalSchedule?->doctor_name,
+                    'attendance_status' => 'Terjadwal',
+                    'notes' => 'Jadwal otomatis (3 hari setelah sesi terakhir)',
+                ]);
+            }
+        } catch (\Exception $e) {
+            // Silently fail or log auto-scheduling error so it doesn't break the session submission
+            \Illuminate\Support\Facades\Log::error("Auto-scheduling failed: " . $e->getMessage());
+        }
+
         return $this->success(DialysisSessionResource::make($session->load(['patient', 'createdBy'])), 'Sesi HD berhasil dibuat.', 201);
     }
 

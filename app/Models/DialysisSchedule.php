@@ -15,6 +15,8 @@ class DialysisSchedule extends Model
         'patient_id',
         'hd_date',
         'day_name',
+        'start_time',
+        'end_time',
         'shift',
         'room',
         'machine_number',

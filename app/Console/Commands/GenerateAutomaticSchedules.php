@@ -73,6 +73,8 @@ class GenerateAutomaticSchedules extends Command
                         'patient_id' => $patient->id,
                         'hd_date' => $targetDate->toDateString(),
                         'day_name' => $dayName,
+                        'start_time' => $latestSchedule->start_time,
+                        'end_time' => $latestSchedule->end_time,
                         'shift' => $latestSchedule->shift,
                         'room' => $latestSchedule->room,
                         'machine_number' => $latestSchedule->machine_number,

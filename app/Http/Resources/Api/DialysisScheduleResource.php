@@ -15,6 +15,8 @@ class DialysisScheduleResource extends JsonResource
             'patient' => PatientResource::make($this->whenLoaded('patient')),
             'hd_date' => $this->hd_date?->toDateString(),
             'day_name' => $this->day_name,
+            'start_time' => $this->start_time,
+            'end_time' => $this->end_time,
             'shift' => $this->shift,
             'room' => $this->room,
             'machine_number' => $this->machine_number,
