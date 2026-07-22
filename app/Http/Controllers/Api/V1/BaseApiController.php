@@ -42,7 +42,7 @@ class BaseApiController extends Controller
             return false;
         }
 
-        if (in_array($user->role, ['admin', 'manajemen'], true)) {
+        if (in_array($user->role, ['admin', 'manajemen', 'perawat'], true)) {
             return true;
         }
 
@@ -50,7 +50,7 @@ class BaseApiController extends Controller
             return (int) $user->patient_id === $patientId;
         }
 
-        if (in_array($user->role, ['perawat', 'dokter'], true)) {
+        if ($user->role === 'dokter') {
             return in_array($patientId, $this->assignedPatientIds($user), true);
         }
 
@@ -70,7 +70,7 @@ class BaseApiController extends Controller
             return $query->whereRaw('1 = 0');
         }
 
-        if (in_array($user->role, ['admin', 'manajemen'], true)) {
+        if (in_array($user->role, ['admin', 'manajemen', 'perawat'], true)) {
             return $query;
         }
 
@@ -78,7 +78,7 @@ class BaseApiController extends Controller
             return $query->where($column, $user->patient_id);
         }
 
-        if (in_array($user->role, ['perawat', 'dokter'], true)) {
+        if ($user->role === 'dokter') {
             return $query->whereIn($column, $this->assignedPatientIds($user));
         }
 

@@ -20,7 +20,7 @@ class GenerateAutomaticSchedules extends Command
      *
      * @var string
      */
-    protected $description = 'Generate upcoming dialysis schedules automatically from Monday and Friday.';
+    protected $description = 'Generate upcoming dialysis schedules automatically with a 3-day interval.';
 
     /**
      * Execute the console command.
@@ -29,60 +29,68 @@ class GenerateAutomaticSchedules extends Command
     {
         $timezone = config('hd.timezone', config('app.timezone', 'Asia/Jakarta'));
         $today = now($timezone);
-        $dayOfWeek = $today->dayOfWeek;
 
-        // We only generate for Monday (1) and Friday (5) as requested
-        if (! in_array($dayOfWeek, [1, 5])) {
-            $this->info('Today is not Monday or Friday. Skipping.');
-
-            return self::SUCCESS;
-        }
-
-        $upcomingSchedules = [
-            1 => [
-                'date' => $today->copy()->addDays(4),
-                'day_name' => 'Jumat',
-            ],
-            5 => [
-                'date' => $today->copy()->addDays(3),
-                'day_name' => 'Senin',
-            ],
-        ];
-        $targetDate = $upcomingSchedules[$dayOfWeek]['date'];
-        $dayName = $upcomingSchedules[$dayOfWeek]['day_name'];
+        // We run this every day now, so we remove the day-of-week check
 
         $patients = Patient::where('patient_status', 'Aktif')->get();
         $count = 0;
 
+        $dayNames = [
+            0 => 'Minggu',
+            1 => 'Senin',
+            2 => 'Selasa',
+            3 => 'Rabu',
+            4 => 'Kamis',
+            5 => 'Jumat',
+            6 => 'Sabtu',
+        ];
+
         foreach ($patients as $patient) {
-            // Check if schedule already exists for the upcoming HD day.
-            $exists = DialysisSchedule::where('patient_id', $patient->id)
-                ->whereDate('hd_date', $targetDate->toDateString())
-                ->exists();
+            // Get the latest schedule for this patient to determine the next one
+            $latestSchedule = DialysisSchedule::where('patient_id', $patient->id)
+                ->orderBy('hd_date', 'desc')
+                ->first();
 
-            if (! $exists) {
-                // Get shift from the most recent previous schedule
-                $lastSchedule = DialysisSchedule::where('patient_id', $patient->id)
-                    ->whereDate('hd_date', '<', $targetDate->toDateString())
-                    ->orderBy('hd_date', 'desc')
-                    ->first();
+            if (! $latestSchedule) {
+                // Admin must create the first schedule manually for new patients
+                continue;
+            }
 
-                $shift = $lastSchedule ? $lastSchedule->shift : 'Pagi';
+            // Target date is 3 days after the latest schedule
+            $targetDate = $latestSchedule->hd_date->copy()->addDays(3);
 
-                DialysisSchedule::create([
-                    'patient_id' => $patient->id,
-                    'hd_date' => $targetDate->toDateString(),
-                    'day_name' => $dayName,
-                    'shift' => $shift,
-                    'attendance_status' => 'Terjadwal',
-                    'notes' => 'Otomatis dibuat oleh sistem (Jadwal Rutin)',
-                ]);
+            // Generate if the next schedule is within the next 10 days
+            // This ensures patients have their next ~3 sessions visible
+            while ($targetDate->diffInDays($today, false) <= 10) {
+                $exists = DialysisSchedule::where('patient_id', $patient->id)
+                    ->whereDate('hd_date', $targetDate->toDateString())
+                    ->exists();
 
-                $count++;
+                if (! $exists) {
+                    $dayName = $dayNames[$targetDate->dayOfWeek];
+
+                    DialysisSchedule::create([
+                        'patient_id' => $patient->id,
+                        'hd_date' => $targetDate->toDateString(),
+                        'day_name' => $dayName,
+                        'shift' => $latestSchedule->shift,
+                        'room' => $latestSchedule->room,
+                        'machine_number' => $latestSchedule->machine_number,
+                        'doctor_name' => $latestSchedule->doctor_name,
+                        'nurse_name' => $latestSchedule->nurse_name,
+                        'attendance_status' => 'Terjadwal',
+                        'notes' => 'Otomatis dibuat oleh sistem (Interval 3 Hari)',
+                    ]);
+
+                    $count++;
+                }
+
+                // Move to the next potential schedule date for the while loop
+                $targetDate = $targetDate->addDays(3);
             }
         }
 
-        $this->info("Generated {$count} schedules for {$dayName} ({$targetDate->toDateString()}).");
+        $this->info("Generated {$count} upcoming schedules.");
 
         return self::SUCCESS;
     }
