@@ -1056,8 +1056,14 @@
 
         <footer class="footer">
             <div class="footer-inner">
-                <strong>{{ $displayName }}</strong>
-                <span>Monitoring hemodialisis, IDWG, jadwal HD, dan risk alert.</span>
+                <div>
+                    <strong>{{ $displayName }}</strong><br>
+                    <span>Monitoring hemodialisis, IDWG, jadwal HD, dan risk alert.</span>
+                </div>
+                <div style="display: flex; gap: 20px;">
+                    <a href="{{ url('/privacy-policy') }}" style="text-decoration: underline;">Kebijakan Privasi</a>
+                    <span>Hubungi kami: 081276599838</span>
+                </div>
             </div>
         </footer>
     </body>
