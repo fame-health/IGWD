@@ -824,6 +824,7 @@
                     <a href="#alur">Alur</a>
                     <a href="#modul">Modul</a>
                     <a href="#integrasi">API</a>
+                    <a class="button button-outline" href="{{ asset('jupe-bb.apk') }}" download>Unduh APK</a>
                     <a class="button button-primary" href="{{ url('/admin') }}">Masuk Admin</a>
                 </div>
 
@@ -843,7 +844,8 @@
 
                         <div class="hero-actions">
                             <a class="button button-primary" href="{{ url('/admin') }}">Buka Dashboard Admin</a>
-                            <a class="button button-secondary" href="#fitur">Lihat Fitur Utama</a>
+                            <a class="button button-secondary" href="{{ asset('jupe-bb.apk') }}" download>Unduh Aplikasi (APK)</a>
+                            <a class="button button-outline" href="#fitur" style="color: white; border-color: rgba(255,255,255,0.3)">Lihat Fitur</a>
                         </div>
 
                         <div class="hero-metrics" aria-label="Ringkasan kemampuan aplikasi">
