@@ -46,16 +46,36 @@ class GenerateAutomaticSchedules extends Command
         ];
 
         foreach ($patients as $patient) {
-            $latestSchedule = DialysisSchedule::where('patient_id', $patient->id)
+            // Coba cari dari jadwal terakhir
+            $latestEntry = DialysisSchedule::where('patient_id', $patient->id)
                 ->orderBy('hd_date', 'desc')
                 ->first();
 
-            if (! $latestSchedule) {
+            // Jika tidak ada jadwal, coba cari dari sesi HD terakhir sebagai cadangan
+            if (! $latestEntry) {
+                $latestEntry = \App\Models\DialysisSession::where('patient_id', $patient->id)
+                    ->orderBy('session_date', 'desc')
+                    ->first();
+
+                // Gunakan session_date sebagai hd_date untuk perhitungan
+                if ($latestEntry) {
+                    $latestEntry->hd_date = $latestEntry->session_date;
+                }
+            }
+
+            if (! $latestEntry) {
+                // Jika benar-benar tidak ada data history, perawat harus buat 1 jadwal pertama manual
                 continue;
             }
 
             $frequency = $patient->medicalProfile?->hemodialysis_frequency ?? '2x per minggu';
-            $targetDate = $latestSchedule->hd_date->copy();
+            $targetDate = $latestEntry->hd_date->copy();
+
+            // Pastikan kita mulai mengecek dari tanggal hari ini jika data terakhir sudah sangat lama
+            if ($targetDate->isBefore($today)) {
+                // Kita akan terus menambah hari sampai melewati atau sama dengan hari ini
+                // agar sistem bisa mengejar ketertinggalan jadwal
+            }
 
             // Generate if the next schedule is within the next 14 days
             while ($targetDate->diffInDays($today, false) <= 14) {
@@ -98,13 +118,13 @@ class GenerateAutomaticSchedules extends Command
                         'patient_id' => $patient->id,
                         'hd_date' => $targetDate->toDateString(),
                         'day_name' => $dayName,
-                        'start_time' => $latestSchedule->start_time,
-                        'end_time' => $latestSchedule->end_time,
-                        'shift' => $latestSchedule->shift,
-                        'room' => $latestSchedule->room,
-                        'machine_number' => $latestSchedule->machine_number,
-                        'doctor_name' => $latestSchedule->doctor_name,
-                        'nurse_name' => $latestSchedule->nurse_name,
+                        'start_time' => $latestEntry->start_time ?? '07:00',
+                        'end_time' => $latestEntry->end_time ?? '12:00',
+                        'shift' => $latestEntry->shift ?? 'Pagi',
+                        'room' => $latestEntry->room ?? null,
+                        'machine_number' => $latestEntry->machine_number ?? null,
+                        'doctor_name' => $latestEntry->doctor_name ?? null,
+                        'nurse_name' => $latestEntry->nurse_name ?? null,
                         'attendance_status' => 'Terjadwal',
                         'notes' => "Otomatis dibuat oleh sistem (Pola {$frequency})",
                     ]);
