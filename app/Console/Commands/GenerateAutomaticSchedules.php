@@ -30,9 +30,9 @@ class GenerateAutomaticSchedules extends Command
         $timezone = config('hd.timezone', config('app.timezone', 'Asia/Jakarta'));
         $today = now($timezone);
 
-        // We run this every day now, so we remove the day-of-week check
-
-        $patients = Patient::where('patient_status', 'Aktif')->get();
+        $patients = Patient::where('patient_status', 'Aktif')
+            ->with('medicalProfile')
+            ->get();
         $count = 0;
 
         $dayNames = [
@@ -46,22 +46,47 @@ class GenerateAutomaticSchedules extends Command
         ];
 
         foreach ($patients as $patient) {
-            // Get the latest schedule for this patient to determine the next one
             $latestSchedule = DialysisSchedule::where('patient_id', $patient->id)
                 ->orderBy('hd_date', 'desc')
                 ->first();
 
             if (! $latestSchedule) {
-                // Admin must create the first schedule manually for new patients
                 continue;
             }
 
-            // Target date is 3 days after the latest schedule
-            $targetDate = $latestSchedule->hd_date->copy()->addDays(3);
+            $frequency = $patient->medicalProfile?->hemodialysis_frequency ?? '2x per minggu';
+            $targetDate = $latestSchedule->hd_date->copy();
 
-            // Generate if the next schedule is within the next 10 days
-            // This ensures patients have their next ~3 sessions visible
-            while ($targetDate->diffInDays($today, false) <= 10) {
+            // Generate if the next schedule is within the next 14 days
+            while ($targetDate->diffInDays($today, false) <= 14) {
+                $currentDayOfWeek = $targetDate->dayOfWeek; // 0 (Sun) to 6 (Sat)
+                $addDays = 3; // Default fallback
+
+                if ($frequency === '2x per minggu') {
+                    // Pattern: Mon-Thu (3-4), Tue-Fri (3-4), Wed-Sat (3-4)
+                    $addDays = match ($currentDayOfWeek) {
+                        1, 2, 3 => 3, // Mon, Tue, Wed -> add 3 days
+                        4, 5, 6 => 4, // Thu, Fri, Sat -> add 4 days
+                        0 => 1,       // Sun -> skip to Mon
+                    };
+                } elseif ($frequency === '3x per minggu') {
+                    // Pattern: Mon-Wed-Fri (2-2-3), Tue-Thu-Sat (2-2-3)
+                    $addDays = match ($currentDayOfWeek) {
+                        1, 2, 3, 4 => 2, // Mon, Tue, Wed, Thu -> add 2 days
+                        5, 6 => 3,       // Fri, Sat -> add 3 days
+                        0 => 1,          // Sun -> skip to Mon
+                    };
+                } elseif ($frequency === '1x per minggu') {
+                    $addDays = 7;
+                }
+
+                $targetDate = $targetDate->addDays($addDays);
+
+                // Don't generate for Sunday (standard dialysis practice)
+                if ($targetDate->dayOfWeek === 0) {
+                    $targetDate = $targetDate->addDays(1);
+                }
+
                 $exists = DialysisSchedule::where('patient_id', $patient->id)
                     ->whereDate('hd_date', $targetDate->toDateString())
                     ->exists();
@@ -81,14 +106,11 @@ class GenerateAutomaticSchedules extends Command
                         'doctor_name' => $latestSchedule->doctor_name,
                         'nurse_name' => $latestSchedule->nurse_name,
                         'attendance_status' => 'Terjadwal',
-                        'notes' => 'Otomatis dibuat oleh sistem (Interval 3 Hari)',
+                        'notes' => "Otomatis dibuat oleh sistem (Pola {$frequency})",
                     ]);
 
                     $count++;
                 }
-
-                // Move to the next potential schedule date for the while loop
-                $targetDate = $targetDate->addDays(3);
             }
         }
 
