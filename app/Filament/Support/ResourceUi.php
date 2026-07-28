@@ -72,6 +72,7 @@ class ResourceUi
                 DatePicker::make('hemodialysis_start_date')->label('Mulai Hemodialisis'),
                 Select::make('hemodialysis_frequency')->label('Frekuensi HD')->options(self::options(['1x per minggu', '2x per minggu', '3x per minggu'])),
                 TextInput::make('dry_weight')->label('Berat Kering')->numeric()->suffix('kg'),
+                TextInput::make('daily_fluid_limit_ml')->label('Batas Cairan Harian')->numeric()->suffix('ml')->helperText('Jika kosong, akan menggunakan pengaturan umum aplikasi.'),
                 Select::make('vascular_access')->label('Akses Vaskular')->options(self::options(['AV Fistula', 'CDL', 'Graft', 'Lainnya'])),
                 Textarea::make('allergies')->label('Alergi')->columnSpanFull(),
                 Textarea::make('routine_medications')->label('Obat Rutin')->columnSpanFull(),

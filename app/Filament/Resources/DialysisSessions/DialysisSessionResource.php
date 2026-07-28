@@ -4,6 +4,7 @@ namespace App\Filament\Resources\DialysisSessions;
 
 use App\Filament\Resources\DialysisSessions\Pages\ManageDialysisSessions;
 use App\Filament\Support\ResourceUi;
+use App\Models\AppSetting;
 use App\Models\DialysisSchedule;
 use App\Models\DialysisSession;
 use App\Models\Patient;
@@ -162,6 +163,12 @@ class DialysisSessionResource extends Resource
                                 ->live(onBlur: true)
                                 ->helperText('Otomatis dari profil medis bila ada.')
                                 ->afterStateUpdated(fn (Set $set, Get $get): null => self::refreshIdwgPreview($set, $get)),
+                            TextInput::make('daily_fluid_intake_target_ml')
+                                ->label('Batasan Cairan Masuk')
+                                ->numeric()
+                                ->suffix('ml')
+                                ->minValue(0)
+                                ->helperText('Target asupan cairan harian pasien.'),
                             Placeholder::make('calculation_summary')
                                 ->label('Hasil hitung sementara')
                                 ->content(fn (Get $get): string => self::calculationSummary($get))
@@ -282,6 +289,11 @@ class DialysisSessionResource extends Resource
                 TextColumn::make('target_ultrafiltration')
                     ->label('Target UF')
                     ->suffix(' L')
+                    ->placeholder('-')
+                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('daily_fluid_intake_target_ml')
+                    ->label('Batas Cairan')
+                    ->suffix(' ml')
                     ->placeholder('-')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('hd_duration_minutes')
@@ -407,6 +419,11 @@ class DialysisSessionResource extends Resource
         if ($patient->medicalProfile?->dry_weight !== null) {
             $set('dry_weight', self::decimalState($patient->medicalProfile->dry_weight));
         }
+
+        $fluidLimit = $patient->medicalProfile?->daily_fluid_limit_ml
+            ?? AppSetting::value('default_daily_fluid_limit_ml', 1000);
+
+        $set('daily_fluid_intake_target_ml', $fluidLimit);
 
         $previousSession = DialysisSession::query()
             ->where('patient_id', $patientId)

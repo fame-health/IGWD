@@ -18,6 +18,7 @@ class PatientMedicalProfile extends Model
         'hemodialysis_start_date',
         'hemodialysis_frequency',
         'dry_weight',
+        'daily_fluid_limit_ml',
         'vascular_access',
         'allergies',
         'routine_medications',
@@ -30,6 +31,7 @@ class PatientMedicalProfile extends Model
         return [
             'hemodialysis_start_date' => 'date',
             'dry_weight' => 'decimal:2',
+            'daily_fluid_limit_ml' => 'integer',
         ];
     }
 

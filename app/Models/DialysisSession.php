@@ -47,6 +47,7 @@ class DialysisSession extends Model
             'idwg_percent' => 'decimal:2',
             'current_post_hd_weight' => 'decimal:2',
             'target_ultrafiltration' => 'decimal:2',
+            'daily_fluid_intake_target_ml' => 'integer',
         ];
     }
 
