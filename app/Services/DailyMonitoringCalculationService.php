@@ -40,8 +40,9 @@ class DailyMonitoringCalculationService
         $fluidDifference = null;
         $fluidStatus = null;
         if ($monitoring->fluid_intake_ml !== null) {
-            $effectiveOutput = $fluidOutput ?? $fluidLimit;
-            $fluidDifference = (int) $monitoring->fluid_intake_ml - $effectiveOutput;
+            // Sesuai permintaan user: patokan murni dari batasan yang ditetapkan perawat (daily_fluid_limit_ml)
+            // Bukan dikurangi IWL untuk status kepatuhan pasien.
+            $fluidDifference = (int) $monitoring->fluid_intake_ml - (int) $fluidLimit;
             $fluidStatus = $fluidDifference <= 0 ? 'Aman' : 'Melebihi Batas';
         }
 

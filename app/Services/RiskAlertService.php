@@ -56,10 +56,10 @@ class RiskAlertService
                 'alert_level' => $level,
                 'alert_type' => 'Cairan Melebihi Batas',
                 'title' => 'Cairan Harian Melebihi Batas',
-                'message' => 'Cairan masuk harian pasien melebihi perkiraan cairan keluar berdasarkan IWL.',
+                'message' => 'Cairan masuk harian Anda melebihi batasan yang telah ditentukan.',
                 'trigger_value' => $dailyMonitoring->fluid_intake_ml.' ml',
-                'threshold_value' => ($dailyMonitoring->fluid_output_ml ?? $dailyMonitoring->daily_fluid_limit_ml).' ml',
-                'recommendation' => 'Tinjau kepatuhan pembatasan cairan dan lakukan follow up.',
+                'threshold_value' => $dailyMonitoring->daily_fluid_limit_ml.' ml',
+                'recommendation' => 'Kurangi konsumsi cairan untuk hari ini untuk menjaga keseimbangan berat badan (IDWG).',
             ]);
         }
     }
