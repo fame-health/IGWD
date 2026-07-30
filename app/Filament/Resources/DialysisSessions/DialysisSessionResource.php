@@ -84,7 +84,6 @@ class DialysisSessionResource extends Resource
                                 ->afterStateUpdated(function (Set $set, Get $get, ?string $state): void {
                                     self::applyScheduleToForm($set, $state);
                                     self::refreshIdwgPreview($set, $get);
-                                    self::calculateTargetUf($set, $get);
                                 })
                                 ->columnSpanFull(),
                             Placeholder::make('schedule_summary')
@@ -111,7 +110,6 @@ class DialysisSessionResource extends Resource
                                 ->afterStateUpdated(function (Set $set, Get $get, ?string $state): void {
                                     self::applyPatientDefaults($set, $get, $state);
                                     self::refreshIdwgPreview($set, $get);
-                                    self::calculateTargetUf($set, $get);
                                 }),
                             DatePicker::make('session_date')
                                 ->label('Tanggal Sesi')
@@ -133,7 +131,7 @@ class DialysisSessionResource extends Resource
                         ]),
 
                     Step::make('Berat')
-                        ->description('Isi data timbang utama. Target UF dihitung otomatis.')
+                        ->description('Isi data timbang. Berat Kering otomatis mengikuti tarikan cairan.')
                         ->icon(Heroicon::OutlinedScale)
                         ->completedIcon(Heroicon::OutlinedCheckCircle)
                         ->columns([
@@ -155,21 +153,10 @@ class DialysisSessionResource extends Resource
                                 ->suffix('kg')
                                 ->minValue(1)
                                 ->live(onBlur: true)
-                                ->helperText('Berat pasien sebelum tindakan dimulai.')
+                                ->helperText('Berat badan pasien hari ini sebelum HD.')
                                 ->afterStateUpdated(function (Set $set, Get $get): void {
                                     self::refreshIdwgPreview($set, $get);
-                                    self::calculateTargetUf($set, $get);
-                                }),
-                            TextInput::make('dry_weight')
-                                ->label('Berat Kering')
-                                ->numeric()
-                                ->suffix('kg')
-                                ->minValue(1)
-                                ->live(onBlur: true)
-                                ->helperText('Otomatis dari profil medis atau sesi terakhir.')
-                                ->afterStateUpdated(function (Set $set, Get $get): void {
-                                    self::refreshIdwgPreview($set, $get);
-                                    self::calculateTargetUf($set, $get);
+                                    self::calculateDryWeight($set, $get);
                                 }),
                             TextInput::make('target_ultrafiltration')
                                 ->label('Target Cairan Keluar (UF)')
@@ -178,7 +165,20 @@ class DialysisSessionResource extends Resource
                                 ->minValue(0)
                                 ->step(0.1)
                                 ->live(onBlur: true)
-                                ->helperText('Dihitung otomatis: BB Datang - Berat Kering.'),
+                                ->helperText('Tentukan berapa Liter cairan yang akan ditarik.')
+                                ->afterStateUpdated(function (Set $set, Get $get): void {
+                                    self::calculateDryWeight($set, $get);
+                                }),
+                            TextInput::make('dry_weight')
+                                ->label('Berat Kering')
+                                ->numeric()
+                                ->suffix('kg')
+                                ->minValue(1)
+                                ->live(onBlur: true)
+                                ->helperText('Otomatis: BB Datang - Target UF.')
+                                ->afterStateUpdated(function (Set $set, Get $get): void {
+                                    self::refreshIdwgPreview($set, $get);
+                                }),
                             TextInput::make('daily_fluid_intake_target_ml')
                                 ->label('Batasan Cairan Masuk')
                                 ->numeric()
@@ -426,7 +426,6 @@ class DialysisSessionResource extends Resource
             return;
         }
 
-        // Ambil BB Pulang HD Terakhir
         $previousSession = DialysisSession::query()
             ->where('patient_id', $patientId)
             ->whereNotNull('current_post_hd_weight')
@@ -442,8 +441,6 @@ class DialysisSessionResource extends Resource
             $set('previous_post_hd_weight', self::decimalState($previousSession->current_post_hd_weight));
         }
 
-        // OTOMATIS BERAT KERING
-        // Urutan: Profil Medis -> Sesi HD Terakhir -> BB Pulang Terakhir
         $dryWeight = $patient->medicalProfile?->dry_weight
             ?? $previousSession?->dry_weight
             ?? $previousSession?->current_post_hd_weight;
@@ -452,21 +449,20 @@ class DialysisSessionResource extends Resource
             $set('dry_weight', self::decimalState($dryWeight));
         }
 
-        // Batas Cairan
         $fluidLimit = $patient->medicalProfile?->daily_fluid_limit_ml
             ?? AppSetting::value('default_daily_fluid_limit_ml', 1000);
 
         $set('daily_fluid_intake_target_ml', $fluidLimit);
     }
 
-    private static function calculateTargetUf(Set $set, Get $get): void
+    private static function calculateDryWeight(Set $set, Get $get): void
     {
         $preWeight = self::numericState($get('current_pre_hd_weight'));
-        $dryWeight = self::numericState($get('dry_weight'));
+        $targetUf = self::numericState($get('target_ultrafiltration'));
 
-        if ($preWeight !== null && $dryWeight !== null) {
-            $targetUf = max(0, $preWeight - $dryWeight);
-            $set('target_ultrafiltration', self::decimalState($targetUf));
+        if ($preWeight !== null && $targetUf !== null) {
+            $dryWeight = $preWeight - $targetUf;
+            $set('dry_weight', self::decimalState($dryWeight));
         }
     }
 
@@ -547,8 +543,8 @@ class DialysisSessionResource extends Resource
 
         $summary = 'IDWG '.self::decimalState($idwgKg).' kg ('.self::decimalState($idwgPercent).'%) - Risiko '.$risk.'.';
 
-        if ($targetUf !== null) {
-            $summary .= " Target cairan yang akan ditarik: ".self::decimalState($targetUf)." Liter.";
+        if ($targetUf !== null && $dryWeight !== null) {
+            $summary .= " Tarikan ".self::decimalState($targetUf)." L akan membuat Berat Kering menjadi ".self::decimalState($dryWeight)." kg.";
         }
 
         return $summary;
