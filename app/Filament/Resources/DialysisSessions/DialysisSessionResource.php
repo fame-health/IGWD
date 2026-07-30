@@ -147,7 +147,7 @@ class DialysisSessionResource extends Resource
                                 ->suffix('kg')
                                 ->minValue(1)
                                 ->live(onBlur: true)
-                                ->helperText('Biasanya otomatis dari sesi HD sebelumnya.')
+                                ->helperText('Otomatis dari sesi HD sebelumnya.')
                                 ->afterStateUpdated(fn (Set $set, Get $get): null => self::refreshIdwgPreview($set, $get)),
                             TextInput::make('current_pre_hd_weight')
                                 ->label('BB Saat Datang')
@@ -155,7 +155,7 @@ class DialysisSessionResource extends Resource
                                 ->suffix('kg')
                                 ->minValue(1)
                                 ->live(onBlur: true)
-                                ->helperText('Berat badan pasien hari ini sebelum HD.')
+                                ->helperText('Berat pasien sebelum tindakan dimulai.')
                                 ->afterStateUpdated(function (Set $set, Get $get): void {
                                     self::refreshIdwgPreview($set, $get);
                                     self::calculateTargetUf($set, $get);
@@ -166,7 +166,7 @@ class DialysisSessionResource extends Resource
                                 ->suffix('kg')
                                 ->minValue(1)
                                 ->live(onBlur: true)
-                                ->helperText('Otomatis dari profil medis pasien.')
+                                ->helperText('Otomatis dari profil medis atau sesi terakhir.')
                                 ->afterStateUpdated(function (Set $set, Get $get): void {
                                     self::refreshIdwgPreview($set, $get);
                                     self::calculateTargetUf($set, $get);
@@ -178,7 +178,7 @@ class DialysisSessionResource extends Resource
                                 ->minValue(0)
                                 ->step(0.1)
                                 ->live(onBlur: true)
-                                ->helperText('Dihitung otomatis: BB Saat Datang - Berat Kering.'),
+                                ->helperText('Dihitung otomatis: BB Datang - Berat Kering.'),
                             TextInput::make('daily_fluid_intake_target_ml')
                                 ->label('Batasan Cairan Masuk')
                                 ->numeric()
@@ -426,15 +426,7 @@ class DialysisSessionResource extends Resource
             return;
         }
 
-        if ($patient->medicalProfile?->dry_weight !== null) {
-            $set('dry_weight', self::decimalState($patient->medicalProfile->dry_weight));
-        }
-
-        $fluidLimit = $patient->medicalProfile?->daily_fluid_limit_ml
-            ?? AppSetting::value('default_daily_fluid_limit_ml', 1000);
-
-        $set('daily_fluid_intake_target_ml', $fluidLimit);
-
+        // Ambil BB Pulang HD Terakhir
         $previousSession = DialysisSession::query()
             ->where('patient_id', $patientId)
             ->whereNotNull('current_post_hd_weight')
@@ -449,6 +441,22 @@ class DialysisSessionResource extends Resource
         if ($previousSession?->current_post_hd_weight !== null) {
             $set('previous_post_hd_weight', self::decimalState($previousSession->current_post_hd_weight));
         }
+
+        // OTOMATIS BERAT KERING
+        // Urutan: Profil Medis -> Sesi HD Terakhir -> BB Pulang Terakhir
+        $dryWeight = $patient->medicalProfile?->dry_weight
+            ?? $previousSession?->dry_weight
+            ?? $previousSession?->current_post_hd_weight;
+
+        if ($dryWeight !== null) {
+            $set('dry_weight', self::decimalState($dryWeight));
+        }
+
+        // Batas Cairan
+        $fluidLimit = $patient->medicalProfile?->daily_fluid_limit_ml
+            ?? AppSetting::value('default_daily_fluid_limit_ml', 1000);
+
+        $set('daily_fluid_intake_target_ml', $fluidLimit);
     }
 
     private static function calculateTargetUf(Set $set, Get $get): void
