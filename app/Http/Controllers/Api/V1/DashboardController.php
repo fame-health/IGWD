@@ -88,7 +88,15 @@ class DashboardController extends BaseApiController
         if (!$schedule) return null;
 
         if ($schedule->hd_date->toDateString() === $today) {
-            $schedule->notes = "HARI INI: " . ($schedule->notes ?: "Jadwal rutin Anda.");
+            // Kita modifikasi field 'shift' karena dia muncul sebagai teks besar di judul
+            $originalShift = $schedule->shift ?: "Pagi";
+            $schedule->shift = "!! " . strtoupper($originalShift) . " (HARI INI) !!";
+
+            // Kita modifikasi 'location' dengan emoji peringatan
+            $schedule->location = "🚨 JADWAL ANDA HARI INI 🚨";
+
+            // Tambahkan catatan yang sangat jelas
+            $schedule->notes = "⚠️ PENTING: Anda dijadwalkan HD hari ini. Mohon datang tepat waktu.";
         }
 
         return DialysisScheduleResource::make($schedule);

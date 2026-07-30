@@ -18,6 +18,7 @@ class DialysisScheduleResource extends JsonResource
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
             'shift' => $this->shift,
+            'location' => $this->location ?? $this->room,
             'room' => $this->room,
             'machine_number' => $this->machine_number,
             'doctor_name' => $this->doctor_name,
