@@ -9,12 +9,17 @@ class DailyMonitoringResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        // Jika monitoring_date berupa string manual (bukan Carbon), ambil langsung nilainya
+        $dateValue = is_string($this->monitoring_date)
+            ? $this->monitoring_date
+            : $this->monitoring_date?->toDateString();
+
         return [
             'id' => $this->id,
             'patient_id' => $this->patient_id,
             'patient' => PatientResource::make($this->whenLoaded('patient')),
             'last_dialysis_session_id' => $this->last_dialysis_session_id,
-            'monitoring_date' => $this->monitoring_date?->toDateString(),
+            'monitoring_date' => $dateValue,
             'day_after_hd' => $this->day_after_hd,
             'last_hd_date' => $this->last_hd_date?->toDateString(),
             'next_hd_date' => $this->next_hd_date?->toDateString(),

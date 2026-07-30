@@ -35,14 +35,14 @@ class DashboardController extends BaseApiController
             return $this->success($this->getPatientDashboardData($user, $today));
         }
 
-        // Dashboard untuk Perawat/Admin/Dokter lainnya...
+        // Dashboard untuk Staff
         $patientQuery = fn () => $this->scopePatientList(Patient::query(), $request);
         $scheduleQuery = fn () => $this->scopeForPatientRole(DialysisSchedule::query(), $request);
         $sessionQuery = fn () => $this->scopeForPatientRole(DialysisSession::query(), $request);
         $monitoringQuery = fn () => $this->scopeForPatientRole(DailyMonitoring::query(), $request);
         $alertQuery = fn () => $this->scopeForPatientRole(RiskAlert::query(), $request);
 
-        $data = match ($role) {
+        return $this->success(match ($role) {
             'perawat', 'admin' => [
                 'total_pasien_aktif' => $patientQuery()->where('patient_status', 'Aktif')->count(),
                 'jadwal_hd_hari_ini' => $scheduleQuery()->whereDate('hd_date', $today)->count(),
@@ -59,9 +59,7 @@ class DashboardController extends BaseApiController
                 'notifikasi_belum_ditindaklanjuti' => $alertQuery()->whereIn('status', ['Baru', 'Dibaca'])->count(),
             ],
             default => [],
-        };
-
-        return $this->success($data);
+        });
     }
 
     private function getPatientDashboardData($user, $today)
@@ -76,16 +74,18 @@ class DashboardController extends BaseApiController
 
         $riskStatus = $latestMonitoring?->risk_status ?: "Aman";
 
-        // TRIK BARU: Kita manipulasi data agar teks di bawah nama Profil berubah
+        // JIKA HARI INI ADA JADWAL: Kita paksa ganti info di bawah Nama Profil
         if ($todaySchedule) {
-            // Kita ubah monitoring terakhir (atau buat monitoring virtual)
+            $riskStatus = "🏥 JADWAL HD HARI INI";
+
+            // Kita buat objek virtual agar field 'date' di HP berubah menjadi sirine
             if (!$latestMonitoring) {
-                $latestMonitoring = new DailyMonitoring(['monitoring_date' => $today]);
+                $latestMonitoring = new DailyMonitoring();
             }
 
-            // Kita suntikkan pesan JADWAL HD ke field tanggal agar muncul tepat di bawah Nama Profil
-            // Karena aplikasi Android menampilkan: "Monitoring terakhir: $it" (dimana $it adalah monitoring_date)
-            $latestMonitoring->monitoring_date = "🚨 JADWAL HD ANDA HARI INI 🚨";
+            // Bypass casting Carbon dengan manual assignment untuk Resource
+            $latestMonitoring->monitoring_date = "🚨 JADWAL HD HARI INI 🚨";
+            $latestMonitoring->risk_status = "🏥 JADWAL HD HARI INI";
         }
 
         return [
