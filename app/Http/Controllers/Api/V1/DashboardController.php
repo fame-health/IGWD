@@ -13,6 +13,7 @@ use App\Models\Patient;
 use App\Models\RiskAlert;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class DashboardController extends BaseApiController
 {
@@ -27,7 +28,7 @@ class DashboardController extends BaseApiController
         }
 
         $role = $user->role;
-        $today = now()->toDateString();
+        $today = Carbon::now()->toDateString();
 
         $patientQuery = fn () => $this->scopePatientList(Patient::query(), $request);
         $scheduleQuery = fn () => $this->scopeForPatientRole(DialysisSchedule::query(), $request);
@@ -80,25 +81,12 @@ class DashboardController extends BaseApiController
 
     private function getRelevantSchedule($patientId, $today)
     {
+        // Cari jadwal hari ini atau yang akan datang
         $schedule = DialysisSchedule::where('patient_id', $patientId)
             ->whereDate('hd_date', '>=', $today)
             ->orderBy('hd_date')
             ->first();
 
-        if (!$schedule) return null;
-
-        if ($schedule->hd_date->toDateString() === $today) {
-            // Kita modifikasi field 'shift' karena dia muncul sebagai teks besar di judul
-            $originalShift = $schedule->shift ?: "Pagi";
-            $schedule->shift = "!! " . strtoupper($originalShift) . " (HARI INI) !!";
-
-            // Kita modifikasi 'location' dengan emoji peringatan
-            $schedule->location = "🚨 JADWAL ANDA HARI INI 🚨";
-
-            // Tambahkan catatan yang sangat jelas
-            $schedule->notes = "⚠️ PENTING: Anda dijadwalkan HD hari ini. Mohon datang tepat waktu.";
-        }
-
-        return DialysisScheduleResource::make($schedule);
+        return $schedule ? DialysisScheduleResource::make($schedule) : null;
     }
 }
