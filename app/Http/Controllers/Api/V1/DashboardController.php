@@ -24,25 +24,7 @@ class DashboardController extends BaseApiController
             return $this->error('Lengkapi biodata pasien terlebih dahulu.', [
                 'patient_profile' => ['Biodata pasien wajib diisi sebelum masuk dashboard.'],
             ], 409);
-            private function getRelevantSchedule($patientId, $today)
-    {
-        $schedule = DialysisSchedule::where('patient_id', $patientId)
-            ->whereDate('hd_date', '>=', $today)
-            ->orderBy('hd_date')
-            ->first();
-
-        if (!$schedule) return null;
-
-        // Jika jadwalnya adalah hari ini, kita modifikasi sedikit datanya agar
-        // aplikasi Android (yang labelnya hardcoded "Jadwal Berikutnya")
-        // tetap terlihat informatif bagi pasien.
-        if ($schedule->hd_date->toDateString() === $today) {
-            $schedule->notes = "HARI INI: " . ($schedule->notes ?: "Jadwal rutin Anda.");
         }
-
-        return DialysisScheduleResource::make($schedule);
-    }
-}
 
         $role = $user->role;
         $today = now()->toDateString();
@@ -94,25 +76,8 @@ class DashboardController extends BaseApiController
         };
 
         return $this->success($data);
-        private function getRelevantSchedule($patientId, $today)
-    {
-        $schedule = DialysisSchedule::where('patient_id', $patientId)
-            ->whereDate('hd_date', '>=', $today)
-            ->orderBy('hd_date')
-            ->first();
-
-        if (!$schedule) return null;
-
-        // Jika jadwalnya adalah hari ini, kita modifikasi sedikit datanya agar
-        // aplikasi Android (yang labelnya hardcoded "Jadwal Berikutnya")
-        // tetap terlihat informatif bagi pasien.
-        if ($schedule->hd_date->toDateString() === $today) {
-            $schedule->notes = "HARI INI: " . ($schedule->notes ?: "Jadwal rutin Anda.");
-        }
-
-        return DialysisScheduleResource::make($schedule);
     }
-}
+
     private function getRelevantSchedule($patientId, $today)
     {
         $schedule = DialysisSchedule::where('patient_id', $patientId)
@@ -122,9 +87,6 @@ class DashboardController extends BaseApiController
 
         if (!$schedule) return null;
 
-        // Jika jadwalnya adalah hari ini, kita modifikasi sedikit datanya agar
-        // aplikasi Android (yang labelnya hardcoded "Jadwal Berikutnya")
-        // tetap terlihat informatif bagi pasien.
         if ($schedule->hd_date->toDateString() === $today) {
             $schedule->notes = "HARI INI: " . ($schedule->notes ?: "Jadwal rutin Anda.");
         }
