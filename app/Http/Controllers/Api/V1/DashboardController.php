@@ -52,23 +52,7 @@ class DashboardController extends BaseApiController
                 'sesi_hd_hari_ini' => $sessionQuery()->whereDate('session_date', $today)->count(),
                 'notifikasi_belum_ditindaklanjuti' => $alertQuery()->whereIn('status', ['Baru', 'Dibaca'])->count(),
             ],
-            'pasien' => [
-                'jadwal_hd_berikutnya' => $this->getRelevantSchedule($user->patient_id, $today),
-                'monitoring_harian_terakhir' => DailyMonitoringResource::make(DailyMonitoring::where('patient_id', $user->patient_id)->latest('monitoring_date')->first()),
-                'edukasi_terbaru' => EducationResource::make(
-                    Education::where(function($q) use ($user) {
-                        $q->where('is_general', true)
-                          ->orWhere('patient_id', $user->patient_id);
-                    })->latest('education_date')->first()
-                ),
-                'recent_educations' => EducationResource::collection(
-                    Education::where(function($q) use ($user) {
-                        $q->where('is_general', true)
-                          ->orWhere('patient_id', $user->patient_id);
-                    })->latest('education_date')->limit(3)->get()
-                ),
-                'status_risiko_terakhir' => DailyMonitoring::where('patient_id', $user->patient_id)->latest('monitoring_date')->value('risk_status'),
-            ],
+            'pasien' => $this->getPatientDashboardData($user, $today),
             default => [
                 'total_pasien_aktif' => $patientQuery()->where('patient_status', 'Aktif')->count(),
                 'total_alert' => $alertQuery()->count(),
@@ -79,14 +63,44 @@ class DashboardController extends BaseApiController
         return $this->success($data);
     }
 
-    private function getRelevantSchedule($patientId, $today)
+    private function getPatientDashboardData($user, $today)
     {
-        // Cari jadwal hari ini atau yang akan datang
-        $schedule = DialysisSchedule::where('patient_id', $patientId)
-            ->whereDate('hd_date', '>=', $today)
-            ->orderBy('hd_date')
+        $todaySchedule = DialysisSchedule::where('patient_id', $user->patient_id)
+            ->whereDate('hd_date', $today)
             ->first();
 
-        return $schedule ? DialysisScheduleResource::make($schedule) : null;
+        $latestMonitoring = DailyMonitoring::where('patient_id', $user->patient_id)
+            ->latest('monitoring_date')
+            ->first();
+
+        $riskStatus = $latestMonitoring?->risk_status;
+
+        // Trik: Jika hari ini ada jadwal HD, kita "ambil alih" status risiko untuk pengumuman
+        if ($todaySchedule) {
+            $riskStatus = "🏥 JADWAL HD HARI INI";
+        }
+
+        return [
+            'jadwal_hd_berikutnya' => DialysisScheduleResource::make(
+                DialysisSchedule::where('patient_id', $user->patient_id)
+                    ->whereDate('hd_date', '>=', $today)
+                    ->orderBy('hd_date')
+                    ->first()
+            ),
+            'monitoring_harian_terakhir' => DailyMonitoringResource::make($latestMonitoring),
+            'edukasi_terbaru' => EducationResource::make(
+                Education::where(function($q) use ($user) {
+                    $q->where('is_general', true)
+                      ->orWhere('patient_id', $user->patient_id);
+                })->latest('education_date')->first()
+            ),
+            'recent_educations' => EducationResource::collection(
+                Education::where(function($q) use ($user) {
+                    $q->where('is_general', true)
+                      ->orWhere('patient_id', $user->patient_id);
+                })->latest('education_date')->limit(3)->get()
+            ),
+            'status_risiko_terakhir' => $riskStatus,
+        ];
     }
 }
