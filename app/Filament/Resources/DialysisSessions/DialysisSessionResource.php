@@ -84,6 +84,7 @@ class DialysisSessionResource extends Resource
                                 ->afterStateUpdated(function (Set $set, Get $get, ?string $state): void {
                                     self::applyScheduleToForm($set, $state);
                                     self::refreshIdwgPreview($set, $get);
+                                    self::calculateTargetUf($set, $get);
                                 })
                                 ->columnSpanFull(),
                             Placeholder::make('schedule_summary')
@@ -110,6 +111,7 @@ class DialysisSessionResource extends Resource
                                 ->afterStateUpdated(function (Set $set, Get $get, ?string $state): void {
                                     self::applyPatientDefaults($set, $get, $state);
                                     self::refreshIdwgPreview($set, $get);
+                                    self::calculateTargetUf($set, $get);
                                 }),
                             DatePicker::make('session_date')
                                 ->label('Tanggal Sesi')
@@ -131,7 +133,7 @@ class DialysisSessionResource extends Resource
                         ]),
 
                     Step::make('Berat')
-                        ->description('Isi data timbang utama. IDWG dihitung otomatis dari berat pasien.')
+                        ->description('Isi data timbang utama. Target UF dihitung otomatis.')
                         ->icon(Heroicon::OutlinedScale)
                         ->completedIcon(Heroicon::OutlinedCheckCircle)
                         ->columns([
@@ -153,22 +155,36 @@ class DialysisSessionResource extends Resource
                                 ->suffix('kg')
                                 ->minValue(1)
                                 ->live(onBlur: true)
-                                ->helperText('Berat pasien sebelum tindakan HD dimulai.')
-                                ->afterStateUpdated(fn (Set $set, Get $get): null => self::refreshIdwgPreview($set, $get)),
+                                ->helperText('Berat badan pasien hari ini sebelum HD.')
+                                ->afterStateUpdated(function (Set $set, Get $get): void {
+                                    self::refreshIdwgPreview($set, $get);
+                                    self::calculateTargetUf($set, $get);
+                                }),
                             TextInput::make('dry_weight')
                                 ->label('Berat Kering')
                                 ->numeric()
                                 ->suffix('kg')
                                 ->minValue(1)
                                 ->live(onBlur: true)
-                                ->helperText('Otomatis dari profil medis bila ada.')
-                                ->afterStateUpdated(fn (Set $set, Get $get): null => self::refreshIdwgPreview($set, $get)),
+                                ->helperText('Otomatis dari profil medis pasien.')
+                                ->afterStateUpdated(function (Set $set, Get $get): void {
+                                    self::refreshIdwgPreview($set, $get);
+                                    self::calculateTargetUf($set, $get);
+                                }),
+                            TextInput::make('target_ultrafiltration')
+                                ->label('Target Cairan Keluar (UF)')
+                                ->numeric()
+                                ->suffix('L')
+                                ->minValue(0)
+                                ->step(0.1)
+                                ->live(onBlur: true)
+                                ->helperText('Dihitung otomatis: BB Saat Datang - Berat Kering.'),
                             TextInput::make('daily_fluid_intake_target_ml')
                                 ->label('Batasan Cairan Masuk')
                                 ->numeric()
                                 ->suffix('ml')
                                 ->minValue(0)
-                                ->helperText('Target asupan cairan harian pasien.'),
+                                ->helperText('Target asupan harian pasien.'),
                             Placeholder::make('calculation_summary')
                                 ->label('Hasil hitung sementara')
                                 ->content(fn (Get $get): string => self::calculationSummary($get))
@@ -190,12 +206,6 @@ class DialysisSessionResource extends Resource
                                 ->suffix('kg')
                                 ->minValue(1)
                                 ->helperText('Berat pasien setelah sesi HD selesai.'),
-                            TextInput::make('target_ultrafiltration')
-                                ->label('Target Cairan Keluar')
-                                ->numeric()
-                                ->suffix('L')
-                                ->minValue(0)
-                                ->helperText('Opsional. Biasanya ditentukan tim HD/mesin, bukan pasien.'),
                             Select::make('hd_duration_minutes')
                                 ->label('Durasi HD')
                                 ->options([
@@ -206,7 +216,7 @@ class DialysisSessionResource extends Resource
                                     300 => '5 jam',
                                 ])
                                 ->default(240)
-                                ->helperText('Default umum: 4 jam. Ubah hanya jika jadwal unit berbeda.'),
+                                ->helperText('Durasi tindakan berlangsung.'),
                             Textarea::make('staff_notes')
                                 ->label('Catatan Petugas')
                                 ->rows(3)
@@ -441,6 +451,17 @@ class DialysisSessionResource extends Resource
         }
     }
 
+    private static function calculateTargetUf(Set $set, Get $get): void
+    {
+        $preWeight = self::numericState($get('current_pre_hd_weight'));
+        $dryWeight = self::numericState($get('dry_weight'));
+
+        if ($preWeight !== null && $dryWeight !== null) {
+            $targetUf = max(0, $preWeight - $dryWeight);
+            $set('target_ultrafiltration', self::decimalState($targetUf));
+        }
+    }
+
     private static function refreshIdwgPreview(Set $set, Get $get): null
     {
         $previousWeight = self::numericState($get('previous_post_hd_weight'));
@@ -500,6 +521,7 @@ class DialysisSessionResource extends Resource
         $previousWeight = self::numericState($get('previous_post_hd_weight'));
         $currentPreWeight = self::numericState($get('current_pre_hd_weight'));
         $dryWeight = self::numericState($get('dry_weight'));
+        $targetUf = self::numericState($get('target_ultrafiltration'));
 
         if ($previousWeight === null || $currentPreWeight === null) {
             return 'Isi BB pulang HD terakhir dan BB saat datang untuk melihat IDWG otomatis.';
@@ -515,7 +537,13 @@ class DialysisSessionResource extends Resource
 
         $risk = app(IdwgCalculationService::class)->riskCategory($idwgPercent);
 
-        return 'IDWG '.self::decimalState($idwgKg).' kg ('.self::decimalState($idwgPercent).'%) - Risiko '.$risk.'.';
+        $summary = 'IDWG '.self::decimalState($idwgKg).' kg ('.self::decimalState($idwgPercent).'%) - Risiko '.$risk.'.';
+
+        if ($targetUf !== null) {
+            $summary .= " Target cairan yang akan ditarik: ".self::decimalState($targetUf)." Liter.";
+        }
+
+        return $summary;
     }
 
     private static function scheduleLocationSummary(?DialysisSchedule $schedule): string
