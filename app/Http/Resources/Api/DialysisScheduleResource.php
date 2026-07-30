@@ -13,27 +13,21 @@ class DialysisScheduleResource extends JsonResource
         $today = Carbon::today('Asia/Jakarta');
         $scheduleDate = Carbon::parse($this->hd_date)->startOfDay();
 
-        // Hitung selisih hari secara presisi
         $diffDays = (int) $today->diffInDays($scheduleDate, false);
 
         $shiftOriginal = $this->shift ?: 'Pagi';
         $shiftUpper = strtoupper($shiftOriginal);
         $shiftLabel = $shiftOriginal;
-        $locationLabel = $this->location ?? $this->room ?? 'Lokasi belum tersedia';
 
+        // Pindahkan SEMUA pengingat ke Shift Label agar baris Lokasi tetap bersih
         if ($diffDays === 0) {
-            // HARI INI - Sangat Menonjol di Judul dengan Sirine Merah
             $shiftLabel = $shiftOriginal . "\n🚨 HARI INI ($shiftUpper) 🚨";
-            // locationLabel dibiarkan normal (menampilkan ruangan/lokasi asli)
         } elseif ($diffDays === 1) {
-            // H-1 - Muncul di Baris Lokasi
-            $locationLabel = "⏰ BESOK YA (H-1)";
+            $shiftLabel = $shiftOriginal . "\n⏰ BESOK YA (H-1)";
         } elseif ($diffDays === 2) {
-            // H-2
-            $locationLabel = "🗓️ 2 HARI LAGI YA (H-2)";
+            $shiftLabel = $shiftOriginal . "\n🗓️ 2 HARI LAGI YA (H-2)";
         } elseif ($diffDays === 3) {
-            // H-3
-            $locationLabel = "🗓️ 3 HARI LAGI YA (H-3)";
+            $shiftLabel = $shiftOriginal . "\n🗓️ 3 HARI LAGI YA (H-3)";
         }
 
         return [
@@ -45,7 +39,7 @@ class DialysisScheduleResource extends JsonResource
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
             'shift' => $shiftLabel,
-            'location' => $locationLabel,
+            'location' => $this->location ?? $this->room,
             'room' => $this->room,
             'machine_number' => $this->machine_number,
             'doctor_name' => $this->doctor_name,
