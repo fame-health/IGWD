@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Resources\Api\DailyMonitoringResource;
 use App\Http\Resources\Api\DialysisScheduleResource;
 use App\Http\Resources\Api\EducationResource;
-use App\Http\Resources\Api\RiskAlertResource;
 use App\Models\DailyMonitoring;
 use App\Models\DialysisSchedule;
 use App\Models\DialysisSession;
@@ -32,7 +31,33 @@ class DashboardController extends BaseApiController
         $today = Carbon::now()->toDateString();
 
         if ($role === 'pasien') {
-            return $this->success($this->getPatientDashboardData($user, $today));
+            $latestMonitoring = DailyMonitoring::where('patient_id', $user->patient_id)
+                ->latest('monitoring_date')
+                ->first();
+
+            return $this->success([
+                'user' => $user, // Kembali ke nama asli
+                'jadwal_hd_berikutnya' => DialysisScheduleResource::make(
+                    DialysisSchedule::where('patient_id', $user->patient_id)
+                        ->whereDate('hd_date', '>=', $today)
+                        ->orderBy('hd_date')
+                        ->first()
+                ),
+                'monitoring_harian_terakhir' => DailyMonitoringResource::make($latestMonitoring),
+                'edukasi_terbaru' => EducationResource::make(
+                    Education::where(function($q) use ($user) {
+                        $q->where('is_general', true)
+                          ->orWhere('patient_id', $user->patient_id);
+                    })->latest('education_date')->first()
+                ),
+                'recent_educations' => EducationResource::collection(
+                    Education::where(function($q) use ($user) {
+                        $q->where('is_general', true)
+                          ->orWhere('patient_id', $user->patient_id);
+                    })->latest('education_date')->limit(3)->get()
+                ),
+                'status_risiko_terakhir' => $latestMonitoring?->risk_status ?: "Aman",
+            ]);
         }
 
         // Dashboard Staff
@@ -60,48 +85,5 @@ class DashboardController extends BaseApiController
             ],
             default => [],
         });
-    }
-
-    private function getPatientDashboardData($user, $today)
-    {
-        $todaySchedule = DialysisSchedule::where('patient_id', $user->patient_id)
-            ->whereDate('hd_date', $today)
-            ->first();
-
-        $latestMonitoring = DailyMonitoring::where('patient_id', $user->patient_id)
-            ->latest('monitoring_date')
-            ->first();
-
-        // 1. Revert Card Kondisi ke Aslinya (Agar Waspada/Aman muncul normal)
-        $riskStatus = $latestMonitoring?->risk_status ?: "Aman";
-
-        // 2. Jika hari ini ada jadwal, kita ubah Nama User-nya (Agar Profil menonjol)
-        if ($todaySchedule) {
-            $user->name = $user->name . " 🚨 JADWAL HD HARI INI 🚨";
-        }
-
-        return [
-            'user' => $user, // Kirim user dengan nama yang sudah dimodifikasi
-            'jadwal_hd_berikutnya' => DialysisScheduleResource::make(
-                DialysisSchedule::where('patient_id', $user->patient_id)
-                    ->whereDate('hd_date', '>=', $today)
-                    ->orderBy('hd_date')
-                    ->first()
-            ),
-            'monitoring_harian_terakhir' => DailyMonitoringResource::make($latestMonitoring),
-            'edukasi_terbaru' => EducationResource::make(
-                Education::where(function($q) use ($user) {
-                    $q->where('is_general', true)
-                      ->orWhere('patient_id', $user->patient_id);
-                })->latest('education_date')->first()
-            ),
-            'recent_educations' => EducationResource::collection(
-                Education::where(function($q) use ($user) {
-                    $q->where('is_general', true)
-                      ->orWhere('patient_id', $user->patient_id);
-                })->latest('education_date')->limit(3)->get()
-            ),
-            'status_risiko_terakhir' => $riskStatus,
-        ];
     }
 }
