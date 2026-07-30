@@ -10,13 +10,27 @@ class DialysisScheduleResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $today = Carbon::now()->toDateString();
-        $isToday = $this->hd_date && Carbon::parse($this->hd_date)->toDateString() === $today;
+        $today = Carbon::now('Asia/Jakarta')->startOfDay();
+        $scheduleDate = Carbon::parse($this->hd_date)->startOfDay();
+        $diffDays = $today->diffInDays($scheduleDate, false);
 
-        $shiftLabel = $this->shift ?: 'Pagi';
-        if ($isToday) {
-            // Kita sisipkan \n agar teks (HARI INI ★) turun ke bawah (Enter)
-            $shiftLabel = $shiftLabel . "\n(HARI INI ★)";
+        $shiftOriginal = $this->shift ?: 'Pagi';
+        $shiftUpper = strtoupper($shiftOriginal);
+        $shiftLabel = $shiftOriginal;
+
+        // Logika Teks Berdasarkan Jarak Hari
+        if ($diffDays === 0) {
+            // HARI INI: Pakai Sirine Merah dan Shift Besar
+            $shiftLabel = $shiftOriginal . "\n🚨 HARI INI ($shiftUpper) 🚨";
+        } elseif ($diffDays === 1) {
+            // H-1
+            $shiftLabel = $shiftOriginal . "\n(BESOK YA)";
+        } elseif ($diffDays === 2) {
+            // H-2
+            $shiftLabel = $shiftOriginal . "\n(2 HARI LAGI YA)";
+        } elseif ($diffDays === 3) {
+            // H-3
+            $shiftLabel = $shiftOriginal . "\n(3 HARI LAGI YA)";
         }
 
         return [
