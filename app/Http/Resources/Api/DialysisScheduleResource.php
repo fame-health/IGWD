@@ -13,10 +13,10 @@ class DialysisScheduleResource extends JsonResource
         $today = Carbon::now()->toDateString();
         $isToday = $this->hd_date && Carbon::parse($this->hd_date)->toDateString() === $today;
 
-        // Tampilan yang Rapi: Masukkan info "HARI INI" ke dalam Shift agar baris lokasi tetap utuh
         $shiftLabel = $this->shift ?: 'Pagi';
         if ($isToday) {
-            $shiftLabel = "{$shiftLabel} (HARI INI ★)";
+            // Kita sisipkan \n agar teks (HARI INI ★) turun ke bawah (Enter)
+            $shiftLabel = $shiftLabel . "\n(HARI INI ★)";
         }
 
         return [
