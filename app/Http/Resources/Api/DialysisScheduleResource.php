@@ -14,15 +14,12 @@ class DialysisScheduleResource extends JsonResource
         $isToday = $this->hd_date && Carbon::parse($this->hd_date)->toDateString() === $today;
 
         $shiftLabel = $this->shift;
-        $locationLabel = $this->location ?? $this->room;
+        // Jika hari ini, kita paksa lokasinya menampilkan teks HARI INI yang mencolok
+        $locationLabel = $isToday ? "🔴 JADWAL HARI INI 🔴" : ($this->location ?? $this->room);
         $notesLabel = $this->notes;
 
         if ($isToday) {
-            // Judul lebih singkat tapi pakai emoji agar menonjol
-            $shiftLabel = ($this->shift ?: 'Pagi') . " (HARI INI 🚨)";
-
-            // Lokasi dibiarkan asli agar tidak terpotong, tapi kita tambahkan info di catatan
-            $notesLabel = "🔔 JADWAL HARI INI. " . $notesLabel;
+            $notesLabel = "🔔 PENTING: Anda dijadwalkan HD hari ini. " . $notesLabel;
         }
 
         return [
