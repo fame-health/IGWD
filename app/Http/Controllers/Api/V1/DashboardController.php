@@ -74,30 +74,23 @@ class DashboardController extends BaseApiController
             ->latest('monitoring_date')
             ->first();
 
-        // Ambil alert asli dari database
-        $alerts = RiskAlert::where('patient_id', $user->patient_id)
-            ->where('is_read', false)
-            ->latest()
-            ->get();
-
         $riskStatus = $latestMonitoring?->risk_status ?: "Aman";
 
-        // TRIK: Jika ada jadwal hari ini, kita "Suntikkan" alert buatan ke urutan teratas
+        // Trik Jitu: Jika ada jadwal hari ini, kita paksa isi data Monitoring Terakhir agar judulnya berubah
         if ($todaySchedule) {
             $riskStatus = "🏥 JADWAL HD HARI INI";
 
-            // Buat Alert palsu/sementara agar muncul di card atas
-            $scheduleAlert = new RiskAlert([
-                'title' => "KONFIRMASI JADWAL",
-                'message' => "Anda memiliki jadwal HD hari ini. Mohon hadir tepat waktu.",
-                'alert_level' => "🏥 JADWAL HD HARI INI", // Ini akan tampil sebagai teks utama di Card
-                'alert_type' => "Jadwal",
-                'status' => "Baru",
-                'is_read' => false
-            ]);
-
-            // Masukkan ke posisi pertama daftar alert agar menang prioritas di Android
-            $alerts->prepend($scheduleAlert);
+            // Jika ada data monitoring, kita timpa status risikonya secara virtual (tanpa simpan database)
+            // Tujuannya agar menang prioritas di kode Kotlin aplikasi Android
+            if ($latestMonitoring) {
+                $latestMonitoring->risk_status = "🏥 JADWAL HD HARI INI";
+            } else {
+                // Jika pasien sama sekali belum pernah isi monitoring, kita kirim monitoring kosong dengan status khusus
+                $latestMonitoring = new DailyMonitoring([
+                    'monitoring_date' => $today,
+                    'risk_status' => "🏥 JADWAL HD HARI INI"
+                ]);
+            }
         }
 
         return [
@@ -121,7 +114,6 @@ class DashboardController extends BaseApiController
                 })->latest('education_date')->limit(3)->get()
             ),
             'status_risiko_terakhir' => $riskStatus,
-            'alerts' => RiskAlertResource::collection($alerts), // Kirim daftar alert yang sudah disuntik
         ];
     }
 }
