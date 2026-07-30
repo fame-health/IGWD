@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Resources\Api\DailyMonitoringResource;
 use App\Http\Resources\Api\DialysisScheduleResource;
 use App\Http\Resources\Api\EducationResource;
+use App\Http\Resources\Api\RiskAlertResource;
 use App\Models\DailyMonitoring;
 use App\Models\DialysisSchedule;
 use App\Models\DialysisSession;
@@ -30,6 +31,11 @@ class DashboardController extends BaseApiController
         $role = $user->role;
         $today = Carbon::now()->toDateString();
 
+        if ($role === 'pasien') {
+            return $this->success($this->getPatientDashboardData($user, $today));
+        }
+
+        // Dashboard untuk Perawat/Admin/Dokter
         $patientQuery = fn () => $this->scopePatientList(Patient::query(), $request);
         $scheduleQuery = fn () => $this->scopeForPatientRole(DialysisSchedule::query(), $request);
         $sessionQuery = fn () => $this->scopeForPatientRole(DialysisSession::query(), $request);
@@ -52,12 +58,7 @@ class DashboardController extends BaseApiController
                 'sesi_hd_hari_ini' => $sessionQuery()->whereDate('session_date', $today)->count(),
                 'notifikasi_belum_ditindaklanjuti' => $alertQuery()->whereIn('status', ['Baru', 'Dibaca'])->count(),
             ],
-            'pasien' => $this->getPatientDashboardData($user, $today),
-            default => [
-                'total_pasien_aktif' => $patientQuery()->where('patient_status', 'Aktif')->count(),
-                'total_alert' => $alertQuery()->count(),
-                'alert_tinggi_darurat' => $alertQuery()->whereIn('alert_level', ['Tinggi', 'Darurat'])->count(),
-            ],
+            default => [],
         };
 
         return $this->success($data);
@@ -73,11 +74,30 @@ class DashboardController extends BaseApiController
             ->latest('monitoring_date')
             ->first();
 
-        $riskStatus = $latestMonitoring?->risk_status;
+        // Ambil alert asli dari database
+        $alerts = RiskAlert::where('patient_id', $user->patient_id)
+            ->where('is_read', false)
+            ->latest()
+            ->get();
 
-        // Trik: Jika hari ini ada jadwal HD, kita "ambil alih" status risiko untuk pengumuman
+        $riskStatus = $latestMonitoring?->risk_status ?: "Aman";
+
+        // TRIK: Jika ada jadwal hari ini, kita "Suntikkan" alert buatan ke urutan teratas
         if ($todaySchedule) {
             $riskStatus = "🏥 JADWAL HD HARI INI";
+
+            // Buat Alert palsu/sementara agar muncul di card atas
+            $scheduleAlert = new RiskAlert([
+                'title' => "KONFIRMASI JADWAL",
+                'message' => "Anda memiliki jadwal HD hari ini. Mohon hadir tepat waktu.",
+                'alert_level' => "🏥 JADWAL HD HARI INI", // Ini akan tampil sebagai teks utama di Card
+                'alert_type' => "Jadwal",
+                'status' => "Baru",
+                'is_read' => false
+            ]);
+
+            // Masukkan ke posisi pertama daftar alert agar menang prioritas di Android
+            $alerts->prepend($scheduleAlert);
         }
 
         return [
@@ -101,6 +121,7 @@ class DashboardController extends BaseApiController
                 })->latest('education_date')->limit(3)->get()
             ),
             'status_risiko_terakhir' => $riskStatus,
+            'alerts' => RiskAlertResource::collection($alerts), // Kirim daftar alert yang sudah disuntik
         ];
     }
 }
