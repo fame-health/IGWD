@@ -10,34 +10,30 @@ class DialysisScheduleResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        // Pastikan kita hanya membandingkan TANGGAL (Y-m-d)
-        $tz = 'Asia/Jakarta';
-        $todayStr = Carbon::now($tz)->format('Y-m-d');
-        $targetStr = Carbon::parse($this->hd_date)->format('Y-m-d');
+        $today = Carbon::today('Asia/Jakarta');
+        $scheduleDate = Carbon::parse($this->hd_date)->startOfDay();
 
-        $dtToday = Carbon::parse($todayStr);
-        $dtTarget = Carbon::parse($targetStr);
-
-        // Selisih hari yang presisi
-        $diffDays = $dtToday->diffInDays($dtTarget, false);
+        // Hitung selisih hari secara presisi
+        $diffDays = (int) $today->diffInDays($scheduleDate, false);
 
         $shiftOriginal = $this->shift ?: 'Pagi';
         $shiftUpper = strtoupper($shiftOriginal);
         $shiftLabel = $shiftOriginal;
+        $locationLabel = $this->location ?? $this->room ?? 'Lokasi belum tersedia';
 
-        // Logika Teks Berdasarkan Jarak Hari (Presisi Tanggal)
         if ($diffDays === 0) {
-            // HARI INI
+            // HARI INI - Sangat Menonjol di Judul
             $shiftLabel = $shiftOriginal . "\n🚨 HARI INI ($shiftUpper) 🚨";
+            $locationLabel = "📍 SEGERA DATANG KE UNIT HD";
         } elseif ($diffDays === 1) {
-            // BESOK
-            $shiftLabel = $shiftOriginal . "\n(BESOK YA)";
+            // H-1 - Muncul di Baris Lokasi
+            $locationLabel = "⏰ BESOK YA (H-1)";
         } elseif ($diffDays === 2) {
-            // LUSA
-            $shiftLabel = $shiftOriginal . "\n(2 HARI LAGI YA)";
+            // H-2
+            $locationLabel = "🗓️ 2 HARI LAGI YA (H-2)";
         } elseif ($diffDays === 3) {
-            // 3 HARI LAGI
-            $shiftLabel = $shiftOriginal . "\n(3 HARI LAGI YA)";
+            // H-3
+            $locationLabel = "🗓️ 3 HARI LAGI YA (H-3)";
         }
 
         return [
@@ -49,7 +45,7 @@ class DialysisScheduleResource extends JsonResource
             'start_time' => $this->start_time,
             'end_time' => $this->end_time,
             'shift' => $shiftLabel,
-            'location' => $this->location ?? $this->room,
+            'location' => $locationLabel,
             'room' => $this->room,
             'machine_number' => $this->machine_number,
             'doctor_name' => $this->doctor_name,
