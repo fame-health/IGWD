@@ -35,7 +35,7 @@ class DashboardController extends BaseApiController
             return $this->success($this->getPatientDashboardData($user, $today));
         }
 
-        // Dashboard untuk Perawat/Admin/Dokter
+        // Dashboard untuk Perawat/Admin/Dokter lainnya...
         $patientQuery = fn () => $this->scopePatientList(Patient::query(), $request);
         $scheduleQuery = fn () => $this->scopeForPatientRole(DialysisSchedule::query(), $request);
         $sessionQuery = fn () => $this->scopeForPatientRole(DialysisSession::query(), $request);
@@ -76,21 +76,16 @@ class DashboardController extends BaseApiController
 
         $riskStatus = $latestMonitoring?->risk_status ?: "Aman";
 
-        // Trik Jitu: Jika ada jadwal hari ini, kita paksa isi data Monitoring Terakhir agar judulnya berubah
+        // TRIK BARU: Kita manipulasi data agar teks di bawah nama Profil berubah
         if ($todaySchedule) {
-            $riskStatus = "🏥 JADWAL HD HARI INI";
-
-            // Jika ada data monitoring, kita timpa status risikonya secara virtual (tanpa simpan database)
-            // Tujuannya agar menang prioritas di kode Kotlin aplikasi Android
-            if ($latestMonitoring) {
-                $latestMonitoring->risk_status = "🏥 JADWAL HD HARI INI";
-            } else {
-                // Jika pasien sama sekali belum pernah isi monitoring, kita kirim monitoring kosong dengan status khusus
-                $latestMonitoring = new DailyMonitoring([
-                    'monitoring_date' => $today,
-                    'risk_status' => "🏥 JADWAL HD HARI INI"
-                ]);
+            // Kita ubah monitoring terakhir (atau buat monitoring virtual)
+            if (!$latestMonitoring) {
+                $latestMonitoring = new DailyMonitoring(['monitoring_date' => $today]);
             }
+
+            // Kita suntikkan pesan JADWAL HD ke field tanggal agar muncul tepat di bawah Nama Profil
+            // Karena aplikasi Android menampilkan: "Monitoring terakhir: $it" (dimana $it adalah monitoring_date)
+            $latestMonitoring->monitoring_date = "🚨 JADWAL HD ANDA HARI INI 🚨";
         }
 
         return [
