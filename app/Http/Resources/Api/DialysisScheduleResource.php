@@ -22,9 +22,9 @@ class DialysisScheduleResource extends JsonResource
         $locationLabel = $this->location ?? $this->room ?? 'Lokasi belum tersedia';
 
         if ($diffDays === 0) {
-            // HARI INI - Sangat Menonjol di Judul
+            // HARI INI - Sangat Menonjol di Judul dengan Sirine Merah
             $shiftLabel = $shiftOriginal . "\n🚨 HARI INI ($shiftUpper) 🚨";
-            $locationLabel = "📍 SEGERA DATANG KE UNIT HD";
+            // locationLabel dibiarkan normal (menampilkan ruangan/lokasi asli)
         } elseif ($diffDays === 1) {
             // H-1 - Muncul di Baris Lokasi
             $locationLabel = "⏰ BESOK YA (H-1)";
