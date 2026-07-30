@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Resources\Api\DailyMonitoringResource;
 use App\Http\Resources\Api\DialysisScheduleResource;
 use App\Http\Resources\Api\EducationResource;
+use App\Http\Resources\Api\RiskAlertResource;
 use App\Models\DailyMonitoring;
 use App\Models\DialysisSchedule;
 use App\Models\DialysisSession;
@@ -71,32 +72,23 @@ class DashboardController extends BaseApiController
             ->latest('monitoring_date')
             ->first();
 
+        // 1. Revert Card Kondisi ke Aslinya (Agar Waspada/Aman muncul normal)
         $riskStatus = $latestMonitoring?->risk_status ?: "Aman";
 
-        // Data Monitoring yang akan dikirim (Default asli)
-        $monitoringData = $latestMonitoring ? (new DailyMonitoringResource($latestMonitoring))->toArray(request()) : null;
-
-        // JIKA HARI INI ADA JADWAL: Kita paksa ganti info di level ARRAY (Bypass Model)
+        // 2. Jika hari ini ada jadwal, kita ubah Nama User-nya (Agar Profil menonjol)
         if ($todaySchedule) {
-            $riskStatus = "🏥 JADWAL HD HARI INI";
-
-            if (!$monitoringData) {
-                $monitoringData = ['id' => 0];
-            }
-
-            // Kita suntikkan teks SIRINE langsung ke array JSON agar Laravel tidak bisa mem-filter-nya
-            $monitoringData['monitoring_date'] = "🚨 JADWAL HD ANDA HARI INI 🚨";
-            $monitoringData['risk_status'] = "🏥 JADWAL HD HARI INI";
+            $user->name = $user->name . " 🚨 JADWAL HD HARI INI 🚨";
         }
 
         return [
+            'user' => $user, // Kirim user dengan nama yang sudah dimodifikasi
             'jadwal_hd_berikutnya' => DialysisScheduleResource::make(
                 DialysisSchedule::where('patient_id', $user->patient_id)
                     ->whereDate('hd_date', '>=', $today)
                     ->orderBy('hd_date')
                     ->first()
             ),
-            'monitoring_harian_terakhir' => $monitoringData, // Mengirim Array yang sudah dimanipulasi
+            'monitoring_harian_terakhir' => DailyMonitoringResource::make($latestMonitoring),
             'edukasi_terbaru' => EducationResource::make(
                 Education::where(function($q) use ($user) {
                     $q->where('is_general', true)
