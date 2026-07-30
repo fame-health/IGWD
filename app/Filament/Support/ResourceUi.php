@@ -53,17 +53,40 @@ class ResourceUi
     {
         return match ($key) {
             'patients' => [
-                TextInput::make('medical_record_number')->label('No. Rekam Medis')->required()->unique(ignoreRecord: true)->maxLength(255),
-                TextInput::make('name')->label('Nama Pasien')->required()->maxLength(255),
-                TextInput::make('nik')->label('NIK')->maxLength(255),
-                DatePicker::make('birth_date')->label('Tanggal Lahir'),
-                Select::make('gender')->label('Jenis Kelamin')->options(['laki-laki' => 'Laki-laki', 'perempuan' => 'Perempuan'])->required(),
-                Textarea::make('address')->label('Alamat')->columnSpanFull(),
-                TextInput::make('phone')->label('Telepon')->maxLength(255),
-                TextInput::make('responsible_person_name')->label('Nama Penanggung Jawab')->maxLength(255),
-                TextInput::make('responsible_person_phone')->label('Telepon Penanggung Jawab')->maxLength(255),
-                Select::make('payment_status')->label('Status Pembayaran')->options(self::options(['BPJS', 'Umum', 'Asuransi', 'Lainnya'])),
-                Select::make('patient_status')->label('Status Pasien')->options(self::options(['Aktif', 'Tidak Aktif', 'Pindah', 'Meninggal']))->default('Aktif')->required(),
+                Section::make('Informasi Identitas')
+                    ->schema([
+                        TextInput::make('medical_record_number')->label('No. Rekam Medis')->required()->unique(ignoreRecord: true)->maxLength(255),
+                        TextInput::make('name')->label('Nama Pasien')->required()->maxLength(255),
+                        TextInput::make('nik')->label('NIK')->maxLength(255),
+                        DatePicker::make('birth_date')->label('Tanggal Lahir'),
+                        Select::make('gender')->label('Jenis Kelamin')->options(['laki-laki' => 'Laki-laki', 'perempuan' => 'Perempuan'])->required(),
+                    ])->columns(2),
+
+                Section::make('Informasi Demografis')
+                    ->schema([
+                        TextInput::make('ethnic_group')->label('Suku Bangsa')->maxLength(255),
+                        TextInput::make('education')->label('Pendidikan')->maxLength(255),
+                        TextInput::make('occupation')->label('Pekerjaan')->maxLength(255),
+                        Select::make('marital_status')->label('Status Pernikahan')->options(self::options(['Belum Menikah', 'Menikah', 'Janda/Duda'])),
+                    ])->columns(2),
+
+                Section::make('Kontak dan Alamat')
+                    ->schema([
+                        TextInput::make('phone')->label('Telepon')->maxLength(255),
+                        Textarea::make('address')->label('Alamat')->columnSpanFull(),
+                    ])->columns(2),
+
+                Section::make('Penanggung Jawab')
+                    ->schema([
+                        TextInput::make('responsible_person_name')->label('Nama Penanggung Jawab')->maxLength(255),
+                        TextInput::make('responsible_person_phone')->label('Telepon Penanggung Jawab')->maxLength(255),
+                    ])->columns(2),
+
+                Section::make('Status dan Administrasi')
+                    ->schema([
+                        Select::make('payment_status')->label('Status Pembayaran')->options(self::options(['BPJS', 'Umum', 'Asuransi', 'Lainnya'])),
+                        Select::make('patient_status')->label('Status Pasien')->options(self::options(['Aktif', 'Tidak Aktif', 'Pindah', 'Meninggal']))->default('Aktif')->required(),
+                    ])->columns(2),
             ],
             'medical_profiles' => [
                 self::patientSelect(),
@@ -258,8 +281,13 @@ class ResourceUi
             'patients' => [
                 TextColumn::make('medical_record_number')->label('No. RM')->searchable()->sortable(),
                 TextColumn::make('name')->label('Nama')->searchable()->sortable(),
+                TextColumn::make('nik')->label('NIK')->searchable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('gender')->label('JK')->badge(),
                 TextColumn::make('phone')->label('Telepon')->searchable(),
+                TextColumn::make('ethnic_group')->label('Suku')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('education')->label('Pendidikan')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('occupation')->label('Pekerjaan')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('marital_status')->label('Status Nikah')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('patient_status')->label('Status')->badge()->color(fn (?string $state): string => self::statusColor($state)),
             ],
             'medical_profiles' => [
