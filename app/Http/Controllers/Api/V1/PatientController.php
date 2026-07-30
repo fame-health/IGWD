@@ -29,7 +29,8 @@ class PatientController extends BaseApiController
 
         $this->scopePatientList($query, $request);
 
-        $patients = $query->orderBy('name')->paginate($request->integer('per_page', 15));
+        // Mengambil semua data pasien tanpa batasan pagination (Get All)
+        $patients = $query->orderBy('name')->get();
 
         return $this->success(PatientResource::collection($patients));
     }
