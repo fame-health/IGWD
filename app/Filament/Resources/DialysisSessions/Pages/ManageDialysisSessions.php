@@ -59,6 +59,7 @@ class ManageDialysisSessions extends ManageRecords
                         ->fromTable()
                         ->withFilename(fn () => 'Sesi-HD-' . date('Y-m-d'))
                         ->withColumns([
+                            Column::make('id')->heading('ID'),
                             Column::make('patient.name')->heading('Pasien'),
                             Column::make('session_date')->heading('Tanggal Sesi'),
                             Column::make('shift')->heading('Shift'),
