@@ -3,14 +3,19 @@
 namespace App\Filament\Resources\DialysisSessions\Pages;
 
 use App\Filament\Resources\DialysisSessions\DialysisSessionResource;
-use Filament\Actions\CreateAction;
 use App\Imports\DialysisSessionImport;
+use Filament\Actions\Action;
+use Filament\Actions\CreateAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Notifications\Notification;
-use Maatwebsite\Excel\Facades\Excel;
 use Filament\Resources\Pages\ManageRecords;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
+use pxlrbt\FilamentExcel\Actions\Pages\ExportAction as ExcelExportAction;
+use pxlrbt\FilamentExcel\Columns\Column;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class ManageDialysisSessions extends ManageRecords
 {
@@ -43,6 +48,7 @@ class ManageDialysisSessions extends ManageRecords
                         ])
                         ->modifyQueryUsing(fn ($query) => $query->limit(0)),
                 ]),
+
             Action::make('import_excel')
                 ->label('Impor Excel')
                 ->icon(Heroicon::OutlinedArrowUpTray)
@@ -56,12 +62,13 @@ class ManageDialysisSessions extends ManageRecords
                             'text/csv',
                         ])
                         ->required()
-                        ->disk('local')
+                        ->disk('public')
                         ->directory('temp-imports'),
                 ])
                 ->action(function (array $data) {
                     try {
-                        Excel::import(new DialysisSessionImport, storage_path('app/public/' . $data['file']));
+                        $filePath = Storage::disk('public')->path($data['file']);
+                        Excel::import(new DialysisSessionImport, $filePath);
 
                         Notification::make()
                             ->title('Impor Berhasil')
@@ -71,11 +78,12 @@ class ManageDialysisSessions extends ManageRecords
                     } catch (\Exception $e) {
                         Notification::make()
                             ->title('Impor Gagal')
-                            ->body('Terjadi kesalahan: ' . $e->getMessage())
+                            ->body('Terjadi kesalahan: '.$e->getMessage())
                             ->danger()
                             ->send();
                     }
                 }),
+
             ExcelExportAction::make()
                 ->label('Ekspor Excel')
                 ->icon(Heroicon::OutlinedArrowDownTray)
@@ -83,7 +91,7 @@ class ManageDialysisSessions extends ManageRecords
                 ->exports([
                     ExcelExport::make()
                         ->fromTable()
-                        ->withFilename(fn () => 'Sesi-HD-' . date('Y-m-d'))
+                        ->withFilename(fn () => 'Sesi-HD-'.date('Y-m-d'))
                         ->withColumns([
                             Column::make('id')->heading('ID'),
                             Column::make('patient.name')->heading('Pasien'),
@@ -105,6 +113,7 @@ class ManageDialysisSessions extends ManageRecords
                             Column::make('staff_notes')->heading('Catatan Petugas'),
                         ]),
                 ]),
+
             CreateAction::make()
                 ->label('Catat Sesi HD')
                 ->icon(Heroicon::OutlinedPlusCircle)
