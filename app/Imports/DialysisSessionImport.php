@@ -3,59 +3,80 @@
 namespace App\Imports;
 
 use App\Models\DialysisSession;
+use App\Models\Patient;
 use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithUpserts;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Illuminate\Support\Facades\Auth;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
-class DialysisSessionImport implements ToModel, WithHeadingRow, WithUpserts
+class DialysisSessionImport implements ToModel, WithHeadingRow, WithUpserts, SkipsEmptyRows
 {
     public function model(array $row)
     {
-        // Skip empty rows
-        if (!isset($row['pasien']) && !isset($row['pasien_id']) && !isset($row['id'])) {
+        // Helper to find key in row despite slight slug variations
+        $get = function($possibilities) use ($row) {
+            foreach ($possibilities as $p) {
+                if (isset($row[$p])) return $row[$p];
+                $slug = str_replace(['(', ')', '-', ' ', '/'], '_', strtolower($p));
+                if (isset($row[$slug])) return $row[$slug];
+            }
             return null;
+        };
+
+        // Identify Patient
+        $patientInput = $get(['pasien_id', 'pasien', 'patient_id', 'patient']);
+        $patientId = null;
+
+        if (is_numeric($patientInput)) {
+            $patientId = (int) $patientInput;
+        } elseif ($patientInput) {
+            $patient = Patient::where('name', 'like', '%' . trim($patientInput) . '%')->first();
+            $patientId = $patient?->id;
         }
 
-        $sessionDate = null;
-        if (isset($row['tanggal_sesi_yyyy_mm_dd'])) {
-            try {
-                $sessionDate = Carbon::parse($row['tanggal_sesi_yyyy_mm_dd'])->toDateString();
-            } catch (\Exception $e) {}
+        if (!$patientId) {
+            return null; // Skip if no patient found to avoid SQL errors
+        }
+
+        // Identify Date
+        $dateValue = $get(['tanggal_sesi', 'session_date', 'tanggal_sesi_yyyy_mm_dd']);
+        $sessionDate = $this->transformDate($dateValue);
+
+        if (!$sessionDate) {
+            return null; // Skip if no date found
         }
 
         $data = [
-            'patient_id' => $row['pasien_id'] ?? $row['pasien'] ?? null,
+            'patient_id' => $patientId,
             'session_date' => $sessionDate,
-            'shift' => $row['shift_pagi_siang_sore_malam'] ?? $row['shift'] ?? null,
-            'previous_post_hd_weight' => $this->parseNumeric($row['bb_pre_hd_terakhir'] ?? null),
-            'current_pre_hd_weight' => $this->parseNumeric($row['bb_datang'] ?? null),
-            'target_ultrafiltration' => $this->parseNumeric($row['target_uf_l'] ?? null),
-            'blood_pressure_before' => $row['td_pre_contoh_120_80'] ?? $row['td_pre'] ?? null,
-            'blood_sugar_before' => $this->parseNumeric($row['gd_pre'] ?? null),
-            'blood_pressure_after' => $row['td_post'] ?? null,
-            'blood_sugar_after' => $this->parseNumeric($row['gd_post'] ?? null),
-            'current_post_hd_weight' => $this->parseNumeric($row['bb_pulang'] ?? null),
-            'hd_duration_minutes' => (int) ($row['durasi_180_240_dst'] ?? $row['durasi_menit'] ?? 240),
-            'staff_notes' => $row['catatan_petugas'] ?? null,
+            'shift' => $get(['shift', 'shift_pagi_siang_sore_malam']),
+            'previous_post_hd_weight' => $this->parseNumeric($get(['bb_pre_hd_terakhir', 'previous_post_hd_weight'])),
+            'current_pre_hd_weight' => $this->parseNumeric($get(['bb_datang', 'current_pre_hd_weight'])),
+            'target_ultrafiltration' => $this->parseNumeric($get(['target_uf_l', 'target_ultrafiltration'])),
+            'blood_pressure_before' => $get(['td_pre', 'blood_pressure_before', 'td_pre_contoh_120_80']),
+            'blood_sugar_before' => $this->parseNumeric($get(['gd_pre', 'blood_sugar_before'])),
+            'blood_pressure_after' => $get(['td_post', 'blood_pressure_after']),
+            'blood_sugar_after' => $this->parseNumeric($get(['gd_post', 'blood_sugar_after'])),
+            'current_post_hd_weight' => $this->parseNumeric($get(['bb_pulang', 'current_post_hd_weight'])),
+            'hd_duration_minutes' => (int) ($get(['durasi_menit', 'hd_duration_minutes', 'durasi_180_240_dst']) ?? 240),
+            'staff_notes' => $get(['catatan_petugas', 'staff_notes']),
         ];
 
-        // For new records, set creator
-        if (!isset($row['id']) || !$row['id']) {
-            $data['created_by'] = Auth::id();
-        }
-
-        $data['updated_by'] = Auth::id();
-
-        // If ID exists, we'll let WithUpserts handle it, but we need to return the model instance
-        if (isset($row['id']) && $row['id']) {
-            $session = DialysisSession::find($row['id']);
+        $id = $get(['id']);
+        if ($id && is_numeric($id)) {
+            $session = DialysisSession::find($id);
             if ($session) {
+                $data['updated_by'] = Auth::id();
                 $session->fill($data);
                 return $session;
             }
         }
+
+        $data['created_by'] = Auth::id();
+        $data['updated_by'] = Auth::id();
 
         return new DialysisSession($data);
     }
@@ -65,9 +86,25 @@ class DialysisSessionImport implements ToModel, WithHeadingRow, WithUpserts
         return 'id';
     }
 
+    private function transformDate($value)
+    {
+        if (!$value) return null;
+
+        try {
+            if (is_numeric($value)) {
+                return Date::excelToDateTimeObject($value)->format('Y-m-d');
+            }
+            return Carbon::parse($value)->toDateString();
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
     private function parseNumeric($value)
     {
         if ($value === null || $value === '') return null;
-        return (float) str_replace(',', '.', (string) $value);
+        // Handle Indonesian format (57,5) and standard (57.5)
+        $clean = str_replace(',', '.', (string) $value);
+        return is_numeric($clean) ? (float) $clean : null;
     }
 }
