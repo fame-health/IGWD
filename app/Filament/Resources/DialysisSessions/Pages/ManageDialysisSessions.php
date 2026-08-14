@@ -4,12 +4,10 @@ namespace App\Filament\Resources\DialysisSessions\Pages;
 
 use App\Filament\Resources\DialysisSessions\DialysisSessionResource;
 use Filament\Actions\CreateAction;
-use Filament\Actions\ImportAction;
-use pxlrbt\FilamentExcel\Actions\Pages\ExportAction as ExcelExportAction;
-use pxlrbt\FilamentExcel\Exports\ExcelExport;
-use pxlrbt\FilamentExcel\Columns\Column;
-use App\Filament\Imports\DialysisSessionImporter;
-use Filament\Actions\Action;
+use App\Imports\DialysisSessionImport;
+use Filament\Forms\Components\FileUpload;
+use Filament\Notifications\Notification;
+use Maatwebsite\Excel\Facades\Excel;
 use Filament\Resources\Pages\ManageRecords;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
@@ -45,11 +43,39 @@ class ManageDialysisSessions extends ManageRecords
                         ])
                         ->modifyQueryUsing(fn ($query) => $query->limit(0)),
                 ]),
-            ImportAction::make()
-                ->importer(DialysisSessionImporter::class)
+            Action::make('import_excel')
                 ->label('Impor Excel')
                 ->icon(Heroicon::OutlinedArrowUpTray)
-                ->color('warning'),
+                ->color('warning')
+                ->form([
+                    FileUpload::make('file')
+                        ->label('Pilih File Excel (.xlsx)')
+                        ->acceptedFileTypes([
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'application/vnd.ms-excel',
+                            'text/csv',
+                        ])
+                        ->required()
+                        ->disk('local')
+                        ->directory('temp-imports'),
+                ])
+                ->action(function (array $data) {
+                    try {
+                        Excel::import(new DialysisSessionImport, storage_path('app/public/' . $data['file']));
+
+                        Notification::make()
+                            ->title('Impor Berhasil')
+                            ->body('Data sesi HD telah berhasil diperbarui/ditambahkan.')
+                            ->success()
+                            ->send();
+                    } catch (\Exception $e) {
+                        Notification::make()
+                            ->title('Impor Gagal')
+                            ->body('Terjadi kesalahan: ' . $e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
             ExcelExportAction::make()
                 ->label('Ekspor Excel')
                 ->icon(Heroicon::OutlinedArrowDownTray)
