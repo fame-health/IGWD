@@ -185,6 +185,16 @@ class DialysisSessionResource extends Resource
                                 ->suffix('ml')
                                 ->minValue(0)
                                 ->helperText('Target asupan harian pasien.'),
+                            TextInput::make('blood_pressure_before')
+                                ->label('Tekanan Darah (Pre)')
+                                ->placeholder('Contoh: 120/80')
+                                ->maxLength(20)
+                                ->helperText('Opsional: Tekanan darah sebelum tindakan.'),
+                            TextInput::make('blood_sugar_before')
+                                ->label('Gula Darah (Pre)')
+                                ->numeric()
+                                ->suffix('mg/dL')
+                                ->helperText('Opsional: Kadar gula darah sebelum tindakan.'),
                             Placeholder::make('calculation_summary')
                                 ->label('Hasil hitung sementara')
                                 ->content(fn (Get $get): string => self::calculationSummary($get))
@@ -206,6 +216,16 @@ class DialysisSessionResource extends Resource
                                 ->suffix('kg')
                                 ->minValue(1)
                                 ->helperText('Berat pasien setelah sesi HD selesai.'),
+                            TextInput::make('blood_pressure_after')
+                                ->label('Tekanan Darah (Post)')
+                                ->placeholder('Contoh: 110/70')
+                                ->maxLength(20)
+                                ->helperText('Opsional: Tekanan darah setelah tindakan.'),
+                            TextInput::make('blood_sugar_after')
+                                ->label('Gula Darah (Post)')
+                                ->numeric()
+                                ->suffix('mg/dL')
+                                ->helperText('Opsional: Kadar gula darah setelah tindakan.'),
                             Select::make('hd_duration_minutes')
                                 ->label('Durasi HD')
                                 ->options([
