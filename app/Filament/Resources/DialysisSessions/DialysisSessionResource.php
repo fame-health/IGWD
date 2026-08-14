@@ -16,6 +16,9 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction as ExcelExportBulkAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
+use pxlrbt\FilamentExcel\Columns\Column;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
@@ -394,6 +397,27 @@ class DialysisSessionResource extends Resource
             ])
             ->toolbarActions([
                 BulkActionGroup::make([
+                    ExcelExportBulkAction::make()
+                        ->label('Ekspor yang dipilih')
+                        ->icon(Heroicon::OutlinedArrowDownTray)
+                        ->exports([
+                            ExcelExport::make()
+                                ->fromTable()
+                                ->withColumns([
+                                    Column::make('patient.name')->heading('Pasien'),
+                                    Column::make('session_date')->heading('Tanggal Sesi'),
+                                    Column::make('shift')->heading('Shift'),
+                                    Column::make('current_pre_hd_weight')->heading('BB Pre'),
+                                    Column::make('current_post_hd_weight')->heading('BB Post'),
+                                    Column::make('idwg_kg')->heading('IDWG (kg)'),
+                                    Column::make('idwg_percent')->heading('IDWG (%)'),
+                                    Column::make('risk_category')->heading('Risiko'),
+                                    Column::make('blood_pressure_before')->heading('TD Pre'),
+                                    Column::make('blood_pressure_after')->heading('TD Post'),
+                                    Column::make('blood_sugar_before')->heading('GD Pre'),
+                                    Column::make('blood_sugar_after')->heading('GD Post'),
+                                ]),
+                        ]),
                     DeleteBulkAction::make(),
                 ]),
             ]);
