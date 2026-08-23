@@ -505,7 +505,8 @@ class DialysisSessionResource extends Resource
         $targetUf = self::numericState($get('target_ultrafiltration'));
 
         if ($preWeight !== null && $targetUf !== null) {
-            $dryWeight = $preWeight - $targetUf;
+            // Konversi Target UF dari mL ke Liter (kg)
+            $dryWeight = $preWeight - ($targetUf / 1000);
             $set('dry_weight', self::decimalState($dryWeight));
         }
     }
