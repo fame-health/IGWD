@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Support\ReportPdfActions;
 use App\Filament\Support\ResourceUi;
 use App\Models\RiskAlert;
 use BackedEnum;
@@ -26,6 +27,13 @@ class RiskAlertReport extends Page implements HasTable
     protected static ?int $navigationSort = 14;
 
     protected string $view = 'filament.pages.report-table';
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            ReportPdfActions::download('risk-alerts'),
+        ];
+    }
 
     public function table(Table $table): Table
     {

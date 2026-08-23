@@ -5,10 +5,12 @@ namespace App\Filament\Pages;
 use App\Filament\Resources\DailyMonitorings\DailyMonitoringResource;
 use App\Filament\Resources\Patients\PatientResource;
 use App\Filament\Resources\RiskAlerts\RiskAlertResource;
+use App\Filament\Support\ReportPdfActions;
 use App\Filament\Widgets\AdminStatsOverview;
 use App\Filament\Widgets\CombinedChartsWidget;
 use App\Filament\Widgets\LatestRiskAlertsTable;
 use App\Filament\Widgets\RiskAlertsByLevelChart;
+use App\Models\RiskAlert;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Pages\Dashboard as BaseDashboard;
@@ -56,6 +58,7 @@ class Dashboard extends BaseDashboard
     protected function getHeaderActions(): array
     {
         return [
+            ReportPdfActions::dashboardGroup(),
             Action::make('patients')
                 ->label('Data Pasien')
                 ->icon(Heroicon::OutlinedUserGroup)
@@ -71,7 +74,7 @@ class Dashboard extends BaseDashboard
                 ->icon(Heroicon::OutlinedBellAlert)
                 ->url(RiskAlertResource::getUrl())
                 ->color('danger')
-                ->badge(fn() => \App\Models\RiskAlert::where('status', 'Baru')->count())
+                ->badge(fn () => RiskAlert::where('status', 'Baru')->count())
                 ->badgeColor('danger'),
         ];
     }

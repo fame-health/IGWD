@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Support\ReportPdfActions;
 use App\Filament\Support\ResourceUi;
 use App\Models\DailyMonitoring;
 use BackedEnum;
@@ -26,6 +27,13 @@ class DailyMonitoringReport extends Page implements HasTable
     protected static ?int $navigationSort = 11;
 
     protected string $view = 'filament.pages.report-table';
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            ReportPdfActions::download('daily-monitoring'),
+        ];
+    }
 
     public function table(Table $table): Table
     {
