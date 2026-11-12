@@ -2,11 +2,15 @@
 
 namespace App\Observers;
 
+use App\Models\DialysisSchedule;
 use App\Models\DialysisSession;
 use App\Services\IdwgCalculationService;
+use App\Services\PreviousHdWeightService;
 use App\Services\PushNotificationService;
 use App\Services\RiskAlertService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class DialysisSessionObserver
 {
@@ -18,6 +22,14 @@ class DialysisSessionObserver
 
         if (Auth::id()) {
             $dialysisSession->updated_by = Auth::id();
+        }
+
+        if ($dialysisSession->previous_post_hd_weight === null) {
+            $previousWeight = app(PreviousHdWeightService::class)->resolveForSession($dialysisSession);
+
+            if ($previousWeight !== null) {
+                $dialysisSession->previous_post_hd_weight = $previousWeight;
+            }
         }
 
         $dialysisSession->forceFill(app(IdwgCalculationService::class)->calculate($dialysisSession));
@@ -42,9 +54,9 @@ class DialysisSessionObserver
     {
         // Auto-generate next schedule (3 days after current session)
         try {
-            $nextDate = \Illuminate\Support\Carbon::parse($session->session_date)->addDays(3);
+            $nextDate = Carbon::parse($session->session_date)->addDays(3);
 
-            $existingSchedule = \App\Models\DialysisSchedule::where('patient_id', $session->patient_id)
+            $existingSchedule = DialysisSchedule::where('patient_id', $session->patient_id)
                 ->whereDate('hd_date', $nextDate->toDateString())
                 ->first();
 
@@ -54,14 +66,14 @@ class DialysisSessionObserver
 
                 // If not found (manual session), try to find the most recent schedule for this patient
                 if (! $originalSchedule) {
-                    $originalSchedule = \App\Models\DialysisSchedule::where('patient_id', $session->patient_id)
+                    $originalSchedule = DialysisSchedule::where('patient_id', $session->patient_id)
                         ->orderBy('hd_date', 'desc')
                         ->first();
                 }
 
                 $user = Auth::user();
 
-                \App\Models\DialysisSchedule::create([
+                DialysisSchedule::create([
                     'patient_id' => $session->patient_id,
                     'hd_date' => $nextDate->toDateString(),
                     'day_name' => $nextDate->translatedFormat('l'),
@@ -78,7 +90,7 @@ class DialysisSessionObserver
             }
         } catch (\Exception $e) {
             // Silently fail or log auto-scheduling error so it doesn't break the session submission
-            \Illuminate\Support\Facades\Log::error('Auto-scheduling failed in Observer: '.$e->getMessage());
+            Log::error('Auto-scheduling failed in Observer: '.$e->getMessage());
         }
     }
 }

@@ -9,6 +9,7 @@ use App\Models\DialysisSchedule;
 use App\Models\DialysisSession;
 use App\Models\Patient;
 use App\Services\IdwgCalculationService;
+use App\Services\PreviousHdWeightService;
 use BackedEnum;
 use Carbon\Carbon;
 use Filament\Actions\ActionGroup;
@@ -16,9 +17,6 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction as ExcelExportBulkAction;
-use pxlrbt\FilamentExcel\Exports\ExcelExport;
-use pxlrbt\FilamentExcel\Columns\Column;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
@@ -38,6 +36,9 @@ use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction as ExcelExportBulkAction;
+use pxlrbt\FilamentExcel\Columns\Column;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
 
 class DialysisSessionResource extends Resource
 {
@@ -148,7 +149,7 @@ class DialysisSessionResource extends Resource
                                 ->suffix('kg')
                                 ->minValue(1)
                                 ->live(onBlur: true)
-                                ->helperText('Otomatis dari sesi HD sebelumnya.')
+                                ->helperText('Otomatis dari sesi HD sebelumnya. Untuk sesi pertama, memakai data BB awal bila tersedia.')
                                 ->afterStateUpdated(fn (Set $set, Get $get): null => self::refreshIdwgPreview($set, $get)),
                             TextInput::make('current_pre_hd_weight')
                                 ->label('BB Saat Datang')
@@ -481,8 +482,11 @@ class DialysisSessionResource extends Resource
             ->orderByDesc('id')
             ->first();
 
-        if ($previousSession?->current_post_hd_weight !== null) {
-            $set('previous_post_hd_weight', self::decimalState($previousSession->current_post_hd_weight));
+        $previousWeight = app(PreviousHdWeightService::class)
+            ->resolveForPatientContext($patientId, $sessionDate);
+
+        if ($previousWeight !== null) {
+            $set('previous_post_hd_weight', self::decimalState($previousWeight));
         }
 
         $dryWeight = $patient->medicalProfile?->dry_weight
@@ -589,7 +593,7 @@ class DialysisSessionResource extends Resource
         $summary = 'IDWG '.self::decimalState($idwgKg).' kg ('.self::decimalState($idwgPercent).'%) - Risiko '.$risk.'.';
 
         if ($targetUf !== null && $dryWeight !== null) {
-            $summary .= " Tarikan ".self::decimalState($targetUf)." L akan membuat Berat Kering menjadi ".self::decimalState($dryWeight)." kg.";
+            $summary .= ' Tarikan '.self::decimalState($targetUf).' L akan membuat Berat Kering menjadi '.self::decimalState($dryWeight).' kg.';
         }
 
         return $summary;

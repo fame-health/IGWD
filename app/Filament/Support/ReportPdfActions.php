@@ -20,9 +20,11 @@ class ReportPdfActions
     public static function dashboardGroup(): ActionGroup
     {
         return ActionGroup::make([
+            self::download('all-reports', 'Semua Laporan'),
             self::download('dashboard', 'Ringkasan Dashboard'),
             self::download('daily-monitoring', 'Monitoring Harian'),
             self::download('dialysis-sessions', 'Sesi HD'),
+            self::download('patient-biodata', 'Seluruh Biodata Pasien'),
             self::download('risk-patients', 'Pasien Risiko'),
             self::download('risk-alerts', 'Notifikasi Risiko'),
         ])

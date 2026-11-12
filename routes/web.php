@@ -13,6 +13,6 @@ Route::get('/privacy-policy', function () {
 });
 
 Route::get('/admin/reports/{report}/pdf', ReportPdfController::class)
-    ->where('report', 'dashboard|daily-monitoring|dialysis-sessions|risk-patients|risk-alerts')
+    ->where('report', 'all-reports|dashboard|daily-monitoring|dialysis-sessions|patient-biodata|risk-patients|risk-alerts')
     ->middleware(FilamentAuthenticate::class)
     ->name('filament.reports.pdf');
